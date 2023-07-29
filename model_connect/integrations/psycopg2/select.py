@@ -1,9 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Generator, Iterator, TypeVar
+from typing import Any, TypeVar
 
-from psycopg2.extras import DictCursor
-
-from model_connect.config.registry import get_config
+from model_connect.integrations.psycopg2.commons import stream_results_to_model_type, stream_from_cursor
+from model_connect.options.registry import get_options
 
 
 _T = TypeVar('_T')
@@ -15,13 +14,11 @@ class SelectQuery:
     vars: tuple[Any, ...] | dict[str, Any] | list[Any] = None
 
 
-def _process_filter_options(
+def process_filter_options(
         cls: type[_T],
         filter_options: dict,
         vars_: list
 ):
-    options = []
-
     for field, value in filter_options.items():
         field = get_model_connect_field(cls, field)
 
@@ -57,7 +54,7 @@ def _process_filter_options(
         }
 
 
-def _process_sort_options(
+def process_sort_options(
         cls: type[_T],
         sort_options: dict
 ):
@@ -83,7 +80,7 @@ def _process_sort_options(
         }
 
 
-def _process_pagination_options(
+def process_pagination_options(
         pagination_options: dict,
         vars_: list
 ):
@@ -115,25 +112,25 @@ def create_select_query(
 ) -> SelectQuery:
     vars_ = []
 
-    config = get_config(model_class)
+    config = get_options(model_class)
 
     # pull from configs!
     tablename = model_class.__name__.lower()
 
-    filter_options = _process_filter_options(
+    filter_options = process_filter_options(
         model_class,
         filter_options,
         vars_
     )
     filter_options = list(filter_options)
 
-    sort_options = _process_sort_options(
+    sort_options = process_sort_options(
         model_class,
         sort_options
     )
     sort_options = list(sort_options)
 
-    pagination_options = _process_pagination_options(
+    pagination_options = process_pagination_options(
         pagination_options,
         vars_
     )
@@ -183,22 +180,6 @@ def create_select_query(
         query=query,
         vars=vars_
     )
-
-
-def stream_from_cursor(cursor: DictCursor, chunk_size: int = 1000) -> Generator[dict, None, None]:
-    while True:
-        rows = cursor.fetchmany(chunk_size)
-
-        if not rows:
-            break
-
-        for row in rows:
-            yield row
-
-
-def stream_results_to_model_type(results: Iterator[dict], model_class: type[_T]) -> Generator[_T, None, None]:
-    for result in results:
-        yield model_class(**result)
 
 
 def stream_select(model_class: type[_T], cursor: Any, chunk_size: int = 1000):
