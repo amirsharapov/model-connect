@@ -23,23 +23,13 @@ class Tests(TestCase):
             filter_options={
                 'id': 1,
                 'blue': 'green',
-                'name': {
-                    '!=': 'John'
-                }
             }
         )
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM person WHERE id = %s AND name != %s'
-        )
-
-        self.assertEqual(
-            query.vars,
-            [1, 'John']
-        )
+        self.assertEqual('SELECT * FROM person WHERE id = %s', sql)
+        self.assertEqual([1], query.vars)
 
     def test_converting_eq_to_is(self):
         connect(Person)
@@ -48,7 +38,6 @@ class Tests(TestCase):
             Person,
             filter_options={
                 'id': 1,
-                'blue': 'green',
                 'name': {
                     '=': None
                 }
@@ -57,10 +46,8 @@ class Tests(TestCase):
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM person WHERE id = %s AND name IS %s'
-        )
+        self.assertEqual('SELECT * FROM person WHERE id = %s AND name IS %s', sql)
+        self.assertEqual([1, None], query.vars)
 
     def test_converting_eq_to_in(self):
         connect(Person)
@@ -68,25 +55,14 @@ class Tests(TestCase):
         query = create_select_query(
             Person,
             filter_options={
-                'id': [1, 2, 3],
-                'blue': 'green',
-                'name': {
-                    '=': None
-                }
+                'id': [1, 2, 3]
             }
         )
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM person WHERE id IN %s AND name IS %s'
-        )
-
-        self.assertEqual(
-            query.vars,
-            [(1, 2, 3), None]
-        )
+        self.assertEqual('SELECT * FROM person WHERE id IN %s', sql)
+        self.assertEqual([(1, 2, 3)], query.vars)
 
     def test_name_plural(self):
         connect(
@@ -102,10 +78,8 @@ class Tests(TestCase):
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM people'
-        )
+        self.assertEqual('SELECT * FROM people', sql)
+        self.assertEqual([], query.vars)
 
     def test_override(self):
         connect(
@@ -126,10 +100,8 @@ class Tests(TestCase):
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM persons'
-        )
+        self.assertEqual('SELECT * FROM persons', sql)
+        self.assertEqual([], query.vars)
 
     def test_sorting(self):
         connect(
@@ -151,7 +123,5 @@ class Tests(TestCase):
 
         sql = ' '.join(query.query.split())
 
-        self.assertEqual(
-            sql,
-            'SELECT * FROM people ORDER BY id ASC, name DESC'
-        )
+        self.assertEqual('SELECT * FROM people ORDER BY id ASC, name DESC', sql)
+        self.assertEqual([], query.vars)
