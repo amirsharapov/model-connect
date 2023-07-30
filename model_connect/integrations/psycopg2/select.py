@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from inspect import isgenerator
 from typing import Any, TypeVar
 
 from jinja2 import Template
@@ -21,10 +22,35 @@ def process_filter_options(
         filter_options: dict,
         vars_: list
 ):
+    """
+    Complex filter option conversion cases:
+    {
+        'name': {
+            '=': 'bob',
+            '!=': [
+                'joe',
+                'jane'
+            ]
+        },
+        'id': [
+            1,
+            2,
+            3
+        ],
+        'age': 12
+    }
+    converts to
+    [
+        'name', '=', 'bob',
+        'name', '!=', 'joe',
+        'name', '!=', 'jane',
+        'id', 'IN', (1, 2, 3)
+    ]
+    """
     if not filter_options:
         return
 
-    for field, value in filter_options.items():
+    for field, operators_object in filter_options.items():
         field = get_model_field_options(dataclass_type, field)
 
         if not field:
@@ -33,30 +59,45 @@ def process_filter_options(
         if not field.can_filter:
             continue
 
-        if isinstance(value, dict):
-            operator = next(iter(value))
-            value = value[operator]
+        if isinstance(operators_object, (list, set, tuple)):
+            operators_object = {
+                'IN': tuple(operators_object)
+            }
 
-        elif isinstance(value, (list, set, tuple)):
-            operator = 'IN'
-            value = tuple(value)
+        if not isinstance(operators_object, dict):
+            operators_object = {
+                '=': operators_object
+            }
 
-        else:
-            operator = '='
+        for operator, value in operators_object.items():
+            if isinstance(value, (list, set, tuple)) and operator in ('IN', 'NOT IN'):
+                value = tuple(value)
+                vars_.append(value)
 
-        if value is None:
-            if operator == '=':
-                operator = 'IS'
-            if operator in ('!=', '<>'):
-                operator = 'IS NOT'
+                yield {
+                    'column': field.name,
+                    'operator': operator,
+                    'value': value
+                }
 
-        vars_.append(value)
+                continue
 
-        yield {
-            'column': field.name,
-            'operator': operator,
-            'value': '%s'
-        }
+            if not isinstance(value, (list, set, tuple)):
+                value = [value]
+
+            for value_ in value:
+                if value_ is None and operator == '=':
+                    operator = 'IS'
+                if value_ is None and operator in ('!=', '<>'):
+                    operator = 'IS NOT'
+
+                vars_.append(value_)
+
+                yield {
+                    'column': field.name,
+                    'operator': operator,
+                    'value': '%s'
+                }
 
 
 def process_sort_options(
@@ -124,9 +165,6 @@ def create_select_query(
     model = get_model_options(model_class)
     model = model.integrations.get(Psycopg2Model)
 
-    # TODO: ADD TYPE HINTS!
-    tablename = model.tablename
-
     filter_options = process_filter_options(
         model_class,
         filter_options,
@@ -182,7 +220,7 @@ def create_select_query(
         ''')
 
     query = template.render(
-        tablename=tablename,
+        tablename=model.tablename,
         filter_options=filter_options,
         sort_options=sort_options,
         pagination_options=pagination_options

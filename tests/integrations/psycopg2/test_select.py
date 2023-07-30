@@ -39,7 +39,7 @@ class Tests(TestCase):
             filter_options={
                 'id': 1,
                 'name': {
-                    '=': None
+                    '=': None,
                 }
             }
         )
@@ -48,6 +48,29 @@ class Tests(TestCase):
 
         self.assertEqual('SELECT * FROM person WHERE id = %s AND name IS %s', sql)
         self.assertEqual([1, None], query.vars)
+
+    def test_like_operator(self):
+        connect(Person)
+
+        query = create_select_query(
+            Person,
+            filter_options={
+                'id': 1,
+                'name': {
+                    'like': '%o%',
+                    '!=': [
+                        'bob',
+                        'joe'
+                    ]
+                }
+            }
+        )
+
+        sql = ' '.join(query.query.split())
+
+        self.assertEqual('SELECT * FROM person WHERE id = %s AND name like %s AND name != %s AND name != %s', sql)
+        self.assertEqual([1, '%o%', 'bob', 'joe'], query.vars)
+
 
     def test_converting_eq_to_in(self):
         connect(Person)
