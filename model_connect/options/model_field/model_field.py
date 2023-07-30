@@ -2,10 +2,10 @@ from dataclasses import Field, fields
 
 from model_connect.base import Base
 from model_connect.constants import is_undefined, UNDEFINED
-from model_connect.integrations.base import BaseFieldOptions
+from model_connect.integrations.base import BaseIntegrationModelField
 from model_connect.options import ConnectOptions
-from model_connect.options.model_field_dtos.request import RequestDtos
-from model_connect.options.model_field_dtos.response import ResponseDtos
+from model_connect.options.model_field.model_field_dtos.request import RequestDtos
+from model_connect.options.model_field.model_field_dtos.response import ResponseDtos
 
 
 class ModelFields(Base):
@@ -37,7 +37,7 @@ class ModelField(Base):
             request_dtos: dict[str, dict] = UNDEFINED,
             response_dtos: dict[str, dict] = UNDEFINED,
             query_params: tuple[str, ...] = UNDEFINED,
-            custom_overrides: BaseFieldOptions | tuple['BaseFieldOptions', ...] = UNDEFINED,
+            custom_overrides: BaseIntegrationModelField | tuple['BaseIntegrationModelField', ...] = UNDEFINED,
             **kwargs
     ):
         super().__init__(**kwargs)

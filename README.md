@@ -1,24 +1,24 @@
 # ModelConnect
 
-ModelConnect is a library that enables users to connect their dataclass models with other libraries 
+ModelConnect is a library that enables users to connect their dataclass models with other libraries
 without writing additional boilerplate code.
 
 Our goals and how we plan to achieve them:
 
 - Simplicity
-  - Fluent API
-  - Minimal Setup to Start
+    - Fluent API
+    - Minimal Setup to Start
 
 
 - Reliability
-  - Tested & Testable
-  - Type Annotated
+    - Tested & Testable
+    - Type Annotated
 
 
 - Extensible
-  - Custom Library Adapters & Functions Builder
-    - Includes testing utilities
-  - Override all behaviours
+    - Custom Library Adapters & Functions Builder
+        - Includes testing utilities
+    - Override all behaviours
 
 ## Before ModelConnect
 
@@ -65,6 +65,8 @@ Inside the `models.py` module, we define our models using dataclasses
 
 ```python
 from dataclasses import dataclass
+from model_connect import connect
+
 
 @dataclass
 class User:
@@ -72,35 +74,24 @@ class User:
     age: int
 
 
-@dataclass
-class Address:
-    street: str
-    city: str
-    state: str
-    zip_code: str
-
-
-@dataclass
-class UserAddress:
-    user: User
-    address: Address
+connect(User)
 ```
 
-Now, with our models setup,
-we can use these throughout our application and start replacing the boilerplate.
-
-Let's also configure the `db.py` module:
+Let's also configure the `db.py` module. This exposes a function that returns a new database connection.
 
 ```python
 # db.py
 
 from psycopg2 import connect
 
+
 def open_db_connection():
-    return connect('...') # pass in custom DB details
+    return connect('...')  # pass in custom DB details
 ```
 
-Now let's get to the boilerplate code.
+Now, with our models setup,
+we can use these throughout our application and start replacing the boilerplate.
+
 Normally, most CRUD apps that follow N-tier architecture will have the following modules:
 
 - `controller.py` - used for API endpoint routing
@@ -108,12 +99,12 @@ Normally, most CRUD apps that follow N-tier architecture will have the following
 - `repository.py` - used for abstracting database CRUD operations
 
 From a minimal setup perspective, everything we need is in our model.
-Therefore, we can remove the `service.py` and `repository.py` modules.
+Therefore, we can remove the `service.py` and `repository.py` modules and just use the `controller.py`.
 
-NOTE: This is not to say that these modules are not useful.
-In fact, most complex applications will use these modules.
-However, these complex applications will use these to define business logic rules,
-not boilerplate code.
+NOTE: This is not to say that the `service.py` and `repository.py` modules are not useful.
+In fact, most complex applications will use these modules to handle unique business logic.
+But what this is demonstrating is that for a simple setup (where most of the code in these layers are boilerplate),
+you can remove these modules and just use the model as the scaffolding.
 
 ```python
 from fastapi import Depends
@@ -142,6 +133,7 @@ from src.db import open_db_connection
 
 router = create_router(User)
 
+
 @router.get('')
 def get_users(
         filter_options: dict = Depends(get_filter_options(User)),
@@ -150,28 +142,28 @@ def get_users(
 ):
     connection = open_db_connection()
     with connection.cursor() as cursor:
-          return create_response_dtos(
-                stream_select(
-                    User,
-                    cursor,
-                    filter_options=filter_options,
-                    pagination_options=pagination_options,
-                    sort_options=sort_options
-                )
-          )
+        return create_response_dtos(
+            stream_select(
+                User,
+                cursor,
+                filter_options=filter_options,
+                pagination_options=pagination_options,
+                sort_options=sort_options
+            )
+        )
 
 
 @router.get('/{resource_id}')
 def get_user(resource_id: int):
     connection = open_db_connection()
     with connection.cursor() as cursor:
-          return create_response_dto(
-                stream_select(
-                    User,
-                    cursor,
-                    filter_options={'id': resource_id}
-                )
-          )
+        return create_response_dto(
+            stream_select(
+                User,
+                cursor,
+                filter_options={'id': resource_id}
+            )
+        )
 
 
 @router.post('')
@@ -192,7 +184,7 @@ def post_users(users: Depends(get_from_post_request_dto(User))):
     with connection.cursor() as cursor:
         return create_response_dtos(
             stream_insert(
-                cursor, 
+                cursor,
                 users,
             )
         )
@@ -237,24 +229,39 @@ def delete_user(resource_id: int):
         )
 ```
 
+Done!
+
+And just like that, you've created CRUD API that exposes several endpoints for your `User` resource.
+Normally, writing the DTOs, and the duplicate models (Pydantic, ORMs, etc.) would have taken hundreds of lines of code.
+But with ModelConnect, you're given functions that auto generate this functionality for you.
+
+NOTE: Notice how ModelConnect does not assume the database or the API framework you are using.
+This is done purposely to allow you to swap out the database or API framework at any time.
+In the case you wanted to remove the boilerplate code even further,
+you can create your own functions that wraps a series of ModelConnect functions for you.
+
 # Library Support
 
 API Frameworks:
+
 - FastAPI
 - Flask *(Coming Soon)*
 - Django *(Coming Soon)*
 
 Database Libraries:
+
 - Psycopg2
 - SQLAlchemy *(Coming Soon)*
 - PyMongo *(Coming Soon)*
 - PyMySQL *(Coming Soon)*
 
 Validation Libraries:
+
 - Pydantic *(Coming Soon)*
 - Marshmallow *(Coming Soon)*
 
 Serialization
+
 - JSON *(Coming Soon)*
 - YAML *(Coming Soon)*
 
@@ -301,14 +308,16 @@ connect
 ```
 
 When `connect(...)` is called, a few things happen:
-  1. ConnectOptions is created (if not already)
-  2. `ConnectOptions.resolve()` is called
+
+1. ConnectOptions is created (if not already)
+2. `ConnectOptions.resolve()` is called
 
 When `ConnectOptions.resolve` is called, a few (more) things happen:
-  1. Model is created (if not already)
-  2. ModelFields is created (if not already)
-  3. `Model.resolve()` is called
-  4. `ModelFields.resolve()` is called
+
+1. Model is created (if not already)
+2. ModelFields is created (if not already)
+3. `Model.resolve()` is called
+4. `ModelFields.resolve()` is called
 
 This continues down the tree until all nodes are resolved.
 
@@ -327,32 +336,36 @@ from model_connect import connect
 from model_connect.options import ConnectOptions, Model, ModelFields, ModelField
 from model_connect.integrations.psycopg2 import Psycopg2Model
 
+
 @dataclass
 class User:
     name: str
     age: int
-    
+
+
 connect(
-  User,
-  ConnectOptions(
-    model=Model(
-        custom_overrides=(
-          Psycopg2Model(
-            tablename='users' # <- overrides the default behaviour which is snake_case from dataclass name ('user')
-          ),
+    User,
+    ConnectOptions(
+        model=Model(
+            override_integrations=(
+                Psycopg2Model(
+                    tablename='users'
+                    # <- overrides the default behaviour which is snake_case from dataclass name ('user')
+                ),
+            )
+        ),
+        fields=ModelFields(
+            id=ModelField(
+                is_identifier=True,
+                # <- metadata. downstream nodes (i.e. psycopg2) use this value to determine behaviour
+                validators=(),  # <- validators
+                dtos=(),  # <- dtos
+                # integrations=(...),  # <- no overrides so integrations will attempt to infer attributes from previous options
+            ),
+            name=ModelField(),
+            # age=ModelField(), # <- not specified so ModelFields will attempt to infer attributes from dataclass
         )
-    ),
-    fields=ModelFields(
-      id=ModelField(
-        is_identifier=True,  # <- metadata. downstream nodes (i.e. psycopg2) use this value to determine behaviour
-        validators=(),  # <- validators
-        dtos=(),  # <- dtos
-        # integrations=(...),  # <- no overrides so integrations will attempt to infer attributes from previous options
-      ),
-      name=ModelField(),
-      # age=ModelField(), # <- not specified so ModelFields will attempt to infer attributes from dataclass
     )
-  )
 )
 ```
 
@@ -365,12 +378,14 @@ and the same option chain will handle constructing the options with the defaults
 from dataclasses import dataclass
 from model_connect import connect
 
+
 @dataclass
 class User:
     name: str
     age: int
 
-connect(User) # <- The options (ConnectOptions, Mode, etc.) are inferred from the dataclass
+
+connect(User)  # <- The options (ConnectOptions, Mode, etc.) are inferred from the dataclass
 ```
 
 # Contributing

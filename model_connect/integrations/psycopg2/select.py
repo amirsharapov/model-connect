@@ -15,12 +15,12 @@ class SelectQuery:
 
 
 def process_filter_options(
-        cls: type[_T],
+        dataclass_type: type[_T],
         filter_options: dict,
         vars_: list
 ):
     for field, value in filter_options.items():
-        field = get_model_field(cls, field)
+        field = get_model_field(dataclass_type, field)
 
         if not field:
             continue

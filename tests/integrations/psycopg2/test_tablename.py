@@ -4,7 +4,7 @@ from unittest import TestCase
 from model_connect.connect import connect
 from model_connect.options import ConnectOptions, ModelField, ModelFields, Model
 from model_connect.integrations.connect import connect_integrations
-from model_connect.integrations.psycopg2.integration import Psycopg2Integration
+from model_connect.integrations.psycopg2 import Psycopg2Integration
 from model_connect.integrations.psycopg2.options import get_tablename
 
 

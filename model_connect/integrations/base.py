@@ -2,11 +2,11 @@ from model_connect.base import Base
 
 
 class BaseIntegration(Base):
-    model_class: 'BaseModelOptions' = None
-    model_field_class: 'BaseFieldOptions' = None
+    model_class: type['BaseIntegrationModel'] = None
+    model_field_class: type['BaseIntegrationModelField'] = None
 
 
-class BaseModelOptions(Base): pass
+class BaseIntegrationModel(Base): pass
 
 
-class BaseFieldOptions(Base): pass
+class BaseIntegrationModelField(Base): pass
