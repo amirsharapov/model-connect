@@ -25,7 +25,7 @@ def process_filter_options(
         if not field:
             continue
 
-        if not field.can_filter_by:
+        if not field.can_filter:
             continue
 
         if isinstance(value, dict):
@@ -66,7 +66,7 @@ def process_sort_options(
         if not field:
             continue
 
-        if not field.can_sort_by:
+        if not field.can_sort:
             continue
 
         direction = direction.upper()

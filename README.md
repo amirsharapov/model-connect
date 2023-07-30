@@ -34,6 +34,7 @@ Our goals and how we plan to achieve them:
         - dtos.py         # i.e. pydantic, marshmallow (almost always required)
         - bl.py           # i.e. pydantic, dataclasses (can replace with other models, but recommended)
         - ui.py           # i.e. flask app builder (only required if using UI libraries)
+        ...
 ```
 
 ## After ModelConnect
@@ -50,7 +51,7 @@ Our goals and how we plan to achieve them:
 
 # Quick Start
 
-For example purposes, let's start with the following repository architecture:
+Let's start with the following project architecture that uses FastAPI and psycopg2 to create a CRUD API:
 
 ```
 - src/
@@ -102,12 +103,17 @@ def open_db_connection():
 Now let's get to the boilerplate code.
 Normally, most CRUD apps that follow N-tier architecture will have the following modules:
 
-- controller.py  # used for API endpoint routing
-- service.py  # used for business logic and validation
-- repository.py  # used for abstracting database CRUD operations
+- `controller.py` - used for API endpoint routing
+- `service.py` - used for business logic and validation
+- `repository.py` - used for abstracting database CRUD operations
 
-In our case, because we've defined everything we technically need in our model,
-we can replace all of these modules with a single `routes.py` module.
+From a minimal setup perspective, everything we need is in our model.
+Therefore, we can remove the `service.py` and `repository.py` modules.
+
+NOTE: This is not to say that these modules are not useful.
+In fact, most complex applications will use these modules.
+However, these complex applications will use these to define business logic rules,
+not boilerplate code.
 
 ```python
 from fastapi import Depends
@@ -231,113 +237,141 @@ def delete_user(resource_id: int):
         )
 ```
 
-That's it! Now let's go over what each section of the code does.
+# Library Support
 
-# Custom Configurations
+API Frameworks:
+- FastAPI
+- Flask *(Coming Soon)*
+- Django *(Coming Soon)*
 
-Now you may ask,
-how do I actually integrate this with all the other libraries I'm using?
+Database Libraries:
+- Psycopg2
+- SQLAlchemy *(Coming Soon)*
+- PyMongo *(Coming Soon)*
+- PyMySQL *(Coming Soon)*
 
-# Build Your Own
+Validation Libraries:
+- Pydantic *(Coming Soon)*
+- Marshmallow *(Coming Soon)*
+
+Serialization
+- JSON *(Coming Soon)*
+- YAML *(Coming Soon)*
+
+# Build Your Own Integrations
+
+## Understanding the Options Chain
 
 When a model is connected, it goes through a series of resolutions.
-These resolutions propagate the default behaviour down the chain of specificities.
+These resolutions are referred to as the Options Chain.
+Their purpose is to propagate the default behaviour down the options tree
+where deeper nodes define more specific behaviour.
 The order is as follows:
 
-1. Connect Options `resolve(model_class)`
-2. Model | ModelField Options `resolve(model_class, connect_options)`
-3. Library Options `resolve(model_class, connect_options, model_options)`
+```
+# called once per project (not yet implemented)
+connect_globals
+|-- GlobalOptions
+    |-- Model
+    |   |-- Integrations
+    |       |-- Integration
+    |-- ModelFields
+        |-- ModelField
+            |-- Dtos
+                |-- Dto
+            |-- Validator
+            |-- Integrations
+                |-- Intgration
 
-The ConnectOptions contains metadata used by the model-connect library not specific to the model.
-Next, the Model and Field options are specific to the model and fields and apply to all integrations.
-Finally, there are library-specific options that are specific to the library integration and
-provide the user full control on how the model behaviour with the library.
+...
 
-Consider this a pre-order DFS traversal of the model tree.
-
-## Model
-
-This is the dataclass that you define. It contains the fields that are to be used.
-
-```python
-from dataclasses import dataclass
-
-@dataclass
-class User:
-    name: str
-    age: int
+# called on each model
+connect
+|-- ConnectOptions
+    |-- Model
+    |   |-- Integrations
+    |       |-- Integration
+    |-- ModelFields
+        |-- ModelField
+            |-- Dtos
+                |-- Dto
+            |-- Validator
+            |-- Integrations
+                |-- Intgration
 ```
 
-In the example above, the user is the model.
+When `connect(...)` is called, a few things happen:
+  1. ConnectOptions is created (if not already)
+  2. `ConnectOptions.resolve()` is called
 
-## ModelConnect Options
+When `ConnectOptions.resolve` is called, a few (more) things happen:
+  1. Model is created (if not already)
+  2. ModelFields is created (if not already)
+  3. `Model.resolve()` is called
+  4. `ModelFields.resolve()` is called
 
-These are the options that you can pass into the `connect` function.
+This continues down the tree until all nodes are resolved.
+
+If you are familiar with pre-order DFS traversal, this is essentially what is happening.
+The "pre-order" functionality is the `resolve()` method.
+By resolving the nodes in this way, downstream nodes have access to the default behaviour of upstream nodes
+and can override them if necessary.
+
+## Examples
+
+You can see this model chain concept in action when you connect a model:
 
 ```python
 from dataclasses import dataclass
 from model_connect import connect
 from model_connect.options import ConnectOptions, Model, ModelFields, ModelField
-
+from model_connect.integrations.psycopg2 import Psycopg2Model
 
 @dataclass
 class User:
-  id: int
-  name: str
-  age: int
-
-
+    name: str
+    age: int
+    
 connect(
   User,
   ConnectOptions(
     model=Model(
-      overrides=(
-        Pscyopg2Integration(
-          tablename='users'
-        ),
-      )
+        custom_overrides=(
+          Psycopg2Model(
+            tablename='users' # <- overrides the default behaviour which is snake_case from dataclass name ('user')
+          ),
+        )
     ),
     fields=ModelFields(
       id=ModelField(
-        is_identifier=True,
-        is_required=True,
-        overrides=(
-          Pscyopg2Integration(
-            columnname='id'
-          ),
-        ),
+        is_identifier=True,  # <- metadata. downstream nodes (i.e. psycopg2) use this value to determine behaviour
+        validators=(),  # <- validators
+        dtos=(),  # <- dtos
+        # integrations=(...),  # <- no overrides so integrations will attempt to infer attributes from previous options
       ),
-      name=ModelField(
-        is_required=True
-      ),
-      age=ModelField(
-        is_required=True
-      )
+      name=ModelField(),
+      # age=ModelField(), # <- not specified so ModelFields will attempt to infer attributes from dataclass
     )
   )
 )
 ```
 
-## Supported Libraries
+In another case,
+you may not need to override the inferred behaviour from the dataclass.
+Then, you just connect the model without any options
+and the same option chain will handle constructing the options with the defaults:
 
-API Frameworks:
-- FastAPI
-- Flask
-- Django *(TBD)*
+```python
+from dataclasses import dataclass
+from model_connect import connect
 
-Database Libraries:
-- SQLAlchemy
-- Psycopg2
-- PyMongo *(TBD)*
-- PyMySQL *(TBD)*
+@dataclass
+class User:
+    name: str
+    age: int
 
-Validation Libraries:
-- Pydantic
-- Marshmallow
-
-Serialization
-- JSON
-- YAML
+connect(User) # <- The options (ConnectOptions, Mode, etc.) are inferred from the dataclass
+```
 
 # Contributing
 
@@ -347,14 +381,11 @@ TBD
 
 ## Library or a framework?
 
-With the exception of setting up the initial dataclass models,
-ModelConnect does not force you to write your code a specific way.
+The goal was not to create another framework.
 
-Once you've connected the model, you can use it like a normal dataclass.
-
-The exception here is, if a framework requires additional functionality
-or you wish to provide extra specification, you can do so.
+Instead, the goal is to create a library that handles the integration of multiple frameworks / libraries.
 
 ## Why dataclasses?
 
 It's part of the Python standard library.
+Other model libraries may be supported in the future later.

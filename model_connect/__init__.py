@@ -1,1 +1,1 @@
-from model_connect.registry import get_options
+from model_connect.connect import connect
