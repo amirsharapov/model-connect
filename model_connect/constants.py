@@ -9,7 +9,7 @@ def is_undefined(value):
 
 def coalesce(*args):
     for arg in args:
-        if not is_undefined(arg):
+        if not is_undefined(arg) and arg is not None:
             return arg
 
 

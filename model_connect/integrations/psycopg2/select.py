@@ -5,7 +5,7 @@ from jinja2 import Template
 
 from model_connect.integrations.psycopg2.commons import stream_results_to_model_type, stream_from_cursor
 from model_connect.integrations.psycopg2.options.model import Psycopg2Model
-from model_connect.registry import get_model_field, get_model
+from model_connect.registry import get_model_field_options, get_model_options
 
 _T = TypeVar('_T')
 
@@ -22,7 +22,7 @@ def process_filter_options(
         vars_: list
 ):
     for field, value in filter_options.items():
-        field = get_model_field(dataclass_type, field)
+        field = get_model_field_options(dataclass_type, field)
 
         if not field:
             continue
@@ -63,7 +63,7 @@ def process_sort_options(
     options = []
 
     for field, direction in sort_options.items():
-        field = get_model_field(cls, field)
+        field = get_model_field_options(cls, field)
 
         if not field:
             continue
@@ -114,7 +114,7 @@ def create_select_query(
 ) -> SelectQuery:
     vars_ = []
 
-    model = get_model(model_class)
+    model = get_model_options(model_class)
     model = model.integrations.get(Psycopg2Model)
 
     # TODO: ADD TYPE HINTS!
@@ -145,30 +145,33 @@ def create_select_query(
         FROM
             {{ tablename }}
 
-        WHERE
-            1 = 1
-            {%- if filter_options is not none %}
+        {%- if filter_options is not none %}
+            WHERE
             {%- for key, operator, value in filter_options %}
-            AND {{ key }} {{ operator }} %s
-            {%- endfor %}
+            {{ key }} {{ operator }} %s
+            {%- if not loop.last %}
+            AND
             {%- endif %}
+            {%- endfor %}
+        {%- endif %}
 
-        ORDER BY
-            {%- if sort_options is not none %}
+        {%- if sort_options is not none %}
+            ORDER BY
             {%- for key, direction in sort_options %}
             {{ key }} {{ value }}
+            {%- if not loop.last %}
+            ,
+            {%- endif %}
             {%- endfor %}
-            {%- endif %}
+        {%- endif %}
 
-        LIMIT
-            {%- if pagination_options.limit is not none %}
-            %s
-            {%- endif %}
+        {%- if pagination_options.limit is not none %}
+            LIMIT %s
+        {%- endif %}
 
-        OFFSET
-            {%- if pagination_options.offset is not none %}
-            %s
-            {%- endif %}
+        {%- if pagination_options.offset is not none %}
+            OFFSET %s
+        {%- endif %}
         ;
         ''')
 

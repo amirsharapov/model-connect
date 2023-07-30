@@ -8,4 +8,6 @@ def connect_integrations(*integrations: 'BaseIntegration'):
         assert isinstance(integration.model_class, type)
         assert isinstance(integration.model_field_class, type)
 
+        #TODO: resolve integration options?
+
         registry.add(integration)

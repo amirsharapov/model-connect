@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import TypeVar, TYPE_CHECKING
 
 from model_connect.constants import UNDEFINED, coalesce
-from model_connect.integrations.base import BaseIntegrationModel
+from model_connect.integrations.base import BaseIntegrationModel, ModelIntegrations
 from model_connect.integrations import registry as integrations_registry
 from model_connect.options.model.query_params import QueryParams
 
@@ -23,7 +23,7 @@ class Model:
         init=False
     )
 
-    _integrations: dict[type[_T], _T] = field(
+    _integrations: ModelIntegrations = field(
         init=False,
         default_factory=dict
     )
@@ -58,10 +58,9 @@ class Model:
             self._integrations[integration.__class__] = integration
 
         for integration_class, _ in integrations_registry.iterate():
-            if integration_class in self._integrations:
-                continue
-
             model_class = integration_class.model_class
 
-            self._integrations[integration_class] = model_class()
-            self._integrations[integration_class].resolve(connect_options)
+            if model_class not in self._integrations:
+                self._integrations[model_class] = model_class()
+
+            self._integrations[model_class].resolve(connect_options)

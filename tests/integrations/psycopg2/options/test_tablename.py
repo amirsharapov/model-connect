@@ -3,30 +3,24 @@ from unittest import TestCase
 
 from model_connect.connect import connect
 from model_connect.options import ConnectOptions, ModelField, ModelFields, Model
-from model_connect.integrations.connect import connect_integrations
-from model_connect.integrations.psycopg2 import Psycopg2Integration
-from model_connect.registry import get_model_integration
+from model_connect.integrations.psycopg2 import Psycopg2Integration, Psycopg2Model
+from model_connect.registry import get_model_options
 
 
 class Tests(TestCase):
     def test(self):
-
         @dataclass
         class Person:
             name: str
             age: int
 
         connect(Person)
-        connect_integrations(
-            Psycopg2Integration()
-        )
 
-        tablename = get_model_integration(Person, Psycopg2Integration).model_class.tablename
+        tablename = get_model_options(Person).integrations.get(Psycopg2Model).tablename
 
         self.assertEqual(tablename, 'person')
 
     def test_with_custom_tablename(self):
-
         @dataclass
         class Person:
             name: str
@@ -45,25 +39,11 @@ class Tests(TestCase):
                     password=ModelField(
                         can_filter=False,
                         can_sort=False,
-                        request_dtos=dict(
-                            defaults=dict(
-                                preprocessor=lambda value: hash(value)
-                            )
-                        ),
-                        response_dtos=dict(
-                            defaults=dict(
-                                exclude=True
-                            )
-                        )
                     )
                 )
             )
         )
 
-        connect_integrations(
-            Psycopg2Integration()
-        )
-
-        tablename = get_tablename(Person)
+        tablename = get_model_options(Person).integrations.get(Psycopg2Model).tablename
 
         self.assertEqual(tablename, 'people')

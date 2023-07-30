@@ -1,8 +1,7 @@
 from dataclasses import Field, dataclass, field
 from typing import Callable, Any, TYPE_CHECKING
 
-from model_connect.base import Base
-from model_connect.constants import UNDEFINED, is_undefined, iter_http_methods, coalesce
+from model_connect.constants import UNDEFINED, iter_http_methods, coalesce
 
 if TYPE_CHECKING:
     from model_connect.options import ConnectOptions
@@ -31,7 +30,7 @@ class RequestDtos(dict[str, 'RequestDto']):
 
 
 @dataclass
-class RequestDto(Base):
+class RequestDto:
     include: bool = UNDEFINED
     require: bool = UNDEFINED
     preprocessor: Callable[[Any], Any] = UNDEFINED

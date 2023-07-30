@@ -12,20 +12,19 @@ if TYPE_CHECKING:
     from model_connect.options import ConnectOptions
 
 
-class ModelFields(dict):
+class ModelFields(dict[str, 'ModelField']):
     def resolve(
             self,
-            options: 'ConnectOptions',
-            dataclass_type: type
+            options: 'ConnectOptions'
     ):
         # noinspection PyDataclass
-        for dataclass_field in fields(dataclass_type):
+        for dataclass_field in fields(options.dataclass_type):
             name = dataclass_field.name
 
             if name not in self:
                 self[name] = ModelField()
 
-            self[name].resolve(options, dataclass_type, dataclass_field)
+            self[name].resolve(options, dataclass_field)
 
 
 @dataclass
@@ -73,7 +72,6 @@ class ModelField:
     def resolve(
             self,
             options: 'ConnectOptions',
-            dataclass_type: type,
             dataclass_field: Field
     ):
         self._type = dataclass_field.type
@@ -112,17 +110,16 @@ class ModelField:
             ()
         )
 
-        self.request_dtos.resolve(options, dataclass_type, dataclass_field)
-        self.response_dtos.resolve(options, dataclass_type, dataclass_field)
+        self.request_dtos.resolve(options, dataclass_field)
+        self.response_dtos.resolve(options, dataclass_field)
 
         for integration in self.override_integrations:
             self._integrations[integration.__class__] = integration
 
         for integration_class, _ in integrations_registry.iterate():
-            if integration_class in self._integrations:
-                continue
+            model_field_class = integration_class.model_field_class
 
-            model_class = integration_class.model_class
+            if model_field_class not in self._integrations:
+                self._integrations[model_field_class] = model_field_class()
 
-            self._integrations[integration_class] = model_class()
-            self._integrations[integration_class].resolve(options, dataclass_type)
+            self._integrations[model_field_class].resolve(options, self)

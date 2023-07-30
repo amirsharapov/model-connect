@@ -1,22 +1,18 @@
-from model_connect.base import Base
-from model_connect.constants import UNDEFINED, is_undefined
+from dataclasses import dataclass, field
+
+from model_connect.constants import UNDEFINED, coalesce
 from model_connect.options.model.model import Model
 from model_connect.options.model_field.model_field import ModelFields
 
 
-class ConnectOptions(Base):
-    def __init__(
-            self,
-            *,
-            model: 'Model' = UNDEFINED,
-            model_fields: 'ModelFields' = UNDEFINED,
-            **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.model = model
-        self.model_fields = model_fields
+@dataclass
+class ConnectOptions:
+    model: Model = UNDEFINED
+    model_fields: ModelFields = UNDEFINED
 
-        self._dataclass_type = None
+    _dataclass_type: type = field(
+        init=False
+    )
 
     @property
     def dataclass_type(self):
@@ -25,17 +21,15 @@ class ConnectOptions(Base):
     def resolve(self, dataclass_type: type):
         self._dataclass_type = dataclass_type
 
-        self.model = (
-            self.model
-            if not is_undefined(self.model)
-            else Model()
+        self.model = coalesce(
+            self.model,
+            Model()
         )
 
-        self.model_fields = (
-            self.model_fields
-            if not is_undefined(self.model_fields)
-            else ModelFields()
+        self.model_fields = coalesce(
+            self.model_fields,
+            ModelFields()
         )
 
-        self.model.resolve(self, dataclass_type)
-        self.model_fields.resolve(self, dataclass_type)
+        self.model.resolve(self)
+        self.model_fields.resolve(self)
