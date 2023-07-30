@@ -1,12 +1,12 @@
 from typing import TypeVar
 
 from model_connect import get_options
-from model_connect.connect import Field
+from model_connect.integrations.base import BaseModelOptions, BaseFieldOptions
 
 _T = TypeVar('_T')
 
 
-class Psycopg2ModelOptions(Field):
+class Psycopg2ModelOptions(BaseModelOptions):
     def __init__(
             self,
             table_name: str = None,
@@ -17,7 +17,7 @@ class Psycopg2ModelOptions(Field):
         self.table_name = table_name
 
 
-class Psycopg2FieldOptions(Field):
+class Psycopg2FieldOptions(BaseFieldOptions):
     def __init__(
             self,
             *args,
@@ -32,4 +32,5 @@ class Psycopg2FieldOptions(Field):
 
 def get_tablename(model_class: type[_T]) -> str:
     options = get_options(model_class)
+    options.model.options.get(Psycopg2FieldOptions)
     return model_class._config.table_name

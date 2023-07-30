@@ -1,0 +1,20 @@
+from enum import Enum
+
+UNDEFINED = object()
+
+
+def is_undefined(value):
+    return value is UNDEFINED
+
+
+class HTTPMethods(Enum):
+    GET = 'GET'
+    POST = 'POST'
+    PUT = 'PUT'
+    PATCH = 'PATCH'
+    DELETE = 'DELETE'
+
+
+def iter_http_methods():
+    for method in HTTPMethods:
+        yield method.value

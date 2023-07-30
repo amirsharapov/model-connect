@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from unittest import TestCase
 
-from model_connect.connect import ModelConnect, Model
-from model_connect.integrations.fastapi.options import FastAPIModelOptions
-from model_connect.integrations.psycopg2.options import get_tablename, Psycopg2ModelOptions
+from model_connect.connect import connect
+from model_connect.options import ConnectOptions, ModelField, ModelFields, Model
+from model_connect.integrations.connect import connect_integrations
+from model_connect.integrations.psycopg2.integration import Psycopg2Integration
+from model_connect.integrations.psycopg2.options import get_tablename
 
 
 class Tests(TestCase):
@@ -14,6 +16,11 @@ class Tests(TestCase):
             name: str
             age: int
 
+        connect(Person)
+        connect_integrations(
+            Psycopg2Integration()
+        )
+
         tablename = get_tablename(Person)
 
         self.assertEqual(tablename, 'person')
@@ -22,21 +29,40 @@ class Tests(TestCase):
 
         @dataclass
         class Person:
-            __model_connect__ = ModelConnect(
+            name: str
+            age: int
+            username: str
+            password: str
+
+        connect(
+            Person,
+            ConnectOptions(
                 model=Model(
-                    integrations=(
-                        Psycopg2ModelOptions(
-                            tablename='people'
+                    name_single='person',
+                    name_plural='people',
+                ),
+                model_fields=ModelFields(
+                    password=ModelField(
+                        can_filter=False,
+                        can_sort=False,
+                        request_dtos=dict(
+                            defaults=dict(
+                                preprocessor=lambda value: hash(value)
+                            )
                         ),
-                        FastAPIModelOptions(
-                            route='/people'
+                        response_dtos=dict(
+                            defaults=dict(
+                                exclude=True
+                            )
                         )
                     )
                 )
             )
+        )
 
-            name: str
-            age: int
+        connect_integrations(
+            Psycopg2Integration()
+        )
 
         tablename = get_tablename(Person)
 

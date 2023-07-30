@@ -1,23 +1,21 @@
-from model_connect.base import Base
+from dataclasses import is_dataclass
+
+from model_connect.options.connect import ConnectOptions
+
+from model_connect import registry
 
 
-class ModelConnect(Base):
-    def __init__(
-            self,
-            model: 'Model' = None,
-            fields: 'Fields' = None,
-            *args,
-            **kwargs,
-    ):
-        super().__init__(*args, **kwargs)
-        self.model = model
-        self.fields = fields
+def connect(dataclass_type: type, options: ConnectOptions = None):
+    assert is_dataclass(dataclass_type)
 
+    if options is None:
+        options = ConnectOptions()
 
-class Fields(Base): pass
+    options.resolve(dataclass_type)
 
+    registry.add(
+        dataclass_type,
+        options
+    )
 
-class Field(Base): pass
-
-
-class Model(Base): pass
+    return dataclass_type

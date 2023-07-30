@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, TypeVar
 
 from model_connect.integrations.psycopg2.commons import stream_results_to_model_type, stream_from_cursor
-from model_connect.options.registry import get_options
+from model_connect.registry import get_options
 
 
 _T = TypeVar('_T')
@@ -20,7 +20,7 @@ def process_filter_options(
         vars_: list
 ):
     for field, value in filter_options.items():
-        field = get_model_connect_field(cls, field)
+        field = get_model_field(cls, field)
 
         if not field:
             continue
@@ -61,7 +61,7 @@ def process_sort_options(
     options = []
 
     for field, direction in sort_options.items():
-        field = get_model_connect_field(cls, field)
+        field = get_model_field(cls, field)
 
         if not field:
             continue

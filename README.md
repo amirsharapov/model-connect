@@ -7,19 +7,18 @@ Our goals and how we plan to achieve them:
 
 - Simplicity
   - Fluent API
-  - Minimal Boilerplate to start
+  - Minimal Setup to Start
 
 
 - Reliability
-  - Test module to test model configurations
-  - Explicit parameters
-  - Consistent error messages & return types
+  - Tested & Testable
+  - Type Annotated
 
 
 - Extensible
-  - Custom Library Adapters Builder
-  - Custom Library Functions Builder
-  - Override most config behaviours
+  - Custom Library Adapters & Functions Builder
+    - Includes testing utilities
+  - Override all behaviours
 
 ## Before ModelConnect
 
@@ -31,10 +30,10 @@ Our goals and how we plan to achieve them:
       - routes.py         # API routing
       - service.py        # business logic
       - models/
-        - orm.py          # sqlalchemy, etc.
-        - dtos.py         # pydantic, etc.
-        - bl.py           # pydantic, etc.
-        - ui.py           # flask app builder, etc.
+        - orm.py          # i.e. sqlalchemy (only required if using ORM libraries)
+        - dtos.py         # i.e. pydantic, marshmallow (almost always required)
+        - bl.py           # i.e. pydantic, dataclasses (can replace with other models, but recommended)
+        - ui.py           # i.e. flask app builder (only required if using UI libraries)
 ```
 
 ## After ModelConnect
@@ -46,7 +45,7 @@ Our goals and how we plan to achieve them:
     - user/
       - routes.py         # API routing
       - service.py        # business logic
-      - model.py          # One (dataclass) model to rule them all
+      - model.py          # Plain old dataclass objects
 ```
 
 # Quick Start
@@ -139,9 +138,9 @@ router = create_router(User)
 
 @router.get('')
 def get_users(
-        filter_options: dict = Depends(get_filter_options()),
-        pagination_options: dict = Depends(get_pagination_options()),
-        sort_options: dict = Depends(get_sort_options())
+        filter_options: dict = Depends(get_filter_options(User)),
+        pagination_options: dict = Depends(get_pagination_options(User)),
+        sort_options: dict = Depends(get_sort_options(User))
 ):
     connection = open_db_connection()
     with connection.cursor() as cursor:
@@ -239,9 +238,85 @@ That's it! Now let's go over what each section of the code does.
 Now you may ask,
 how do I actually integrate this with all the other libraries I'm using?
 
-# Build Your Own Library Integrations
+# Build Your Own
 
-TBD
+When a model is connected, it goes through a series of resolutions.
+These resolutions propagate the default behaviour down the chain of specificities.
+The order is as follows:
+
+1. Connect Options `resolve(model_class)`
+2. Model | ModelField Options `resolve(model_class, connect_options)`
+3. Library Options `resolve(model_class, connect_options, model_options)`
+
+The ConnectOptions contains metadata used by the model-connect library not specific to the model.
+Next, the Model and Field options are specific to the model and fields and apply to all integrations.
+Finally, there are library-specific options that are specific to the library integration and
+provide the user full control on how the model behaviour with the library.
+
+Consider this a pre-order DFS traversal of the model tree.
+
+## Model
+
+This is the dataclass that you define. It contains the fields that are to be used.
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    name: str
+    age: int
+```
+
+In the example above, the user is the model.
+
+## ModelConnect Options
+
+These are the options that you can pass into the `connect` function.
+
+```python
+from dataclasses import dataclass
+from model_connect import connect
+from model_connect.options import ConnectOptions, Model, ModelFields, ModelField
+
+
+@dataclass
+class User:
+  id: int
+  name: str
+  age: int
+
+
+connect(
+  User,
+  ConnectOptions(
+    model=Model(
+      overrides=(
+        Pscyopg2Integration(
+          tablename='users'
+        ),
+      )
+    ),
+    fields=ModelFields(
+      id=ModelField(
+        is_identifier=True,
+        is_required=True,
+        overrides=(
+          Pscyopg2Integration(
+            columnname='id'
+          ),
+        ),
+      ),
+      name=ModelField(
+        is_required=True
+      ),
+      age=ModelField(
+        is_required=True
+      )
+    )
+  )
+)
+```
 
 ## Supported Libraries
 

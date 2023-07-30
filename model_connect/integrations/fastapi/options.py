@@ -1,7 +1,7 @@
-from model_connect.base import Base
+from model_connect.integrations.base import BaseModelOptions, BaseFieldOptions
 
 
-class FastAPIModelOptions(Base): pass
+class FastAPIModelOptions(BaseModelOptions): pass
 
 
-class FastAPIFieldOptions(Base): pass
+class FastAPIFieldOptions(BaseFieldOptions): pass
