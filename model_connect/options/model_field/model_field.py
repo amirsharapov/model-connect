@@ -3,6 +3,7 @@ from dataclasses import Field, fields
 from model_connect.base import Base
 from model_connect.constants import is_undefined, UNDEFINED
 from model_connect.integrations.base import BaseIntegrationModelField
+from model_connect.integrations import registry as integrations_registry
 from model_connect.options import ConnectOptions
 from model_connect.options.model_field.model_field_dtos.request import RequestDtos
 from model_connect.options.model_field.model_field_dtos.response import ResponseDtos
@@ -11,7 +12,7 @@ from model_connect.options.model_field.model_field_dtos.response import Response
 class ModelFields(Base):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields = {}
+        self.fields: dict[str, ModelField] = {}
 
     def resolve(
             self,
@@ -25,7 +26,7 @@ class ModelFields(Base):
             if name not in self.fields:
                 self.fields[name] = ModelField()
 
-            self.fields[name].resolve(options, dataclass_type)
+            self.fields[name].resolve(options, dataclass_type, dataclass_field)
 
 
 class ModelField(Base):
@@ -37,11 +38,12 @@ class ModelField(Base):
             request_dtos: dict[str, dict] = UNDEFINED,
             response_dtos: dict[str, dict] = UNDEFINED,
             query_params: tuple[str, ...] = UNDEFINED,
-            custom_overrides: BaseIntegrationModelField | tuple['BaseIntegrationModelField', ...] = UNDEFINED,
+            override_integrations: tuple['BaseIntegrationModelField', ...] = UNDEFINED,
             **kwargs
     ):
         super().__init__(**kwargs)
-        self._type = UNDEFINED
+        self._type = None
+        self._name = None
 
         self.can_sort = can_sort
         self.can_filter = can_filter
@@ -49,15 +51,20 @@ class ModelField(Base):
         self.response_dtos = response_dtos
         self.query_params = query_params
 
-        self.custom_overrides = {}
+        self.override_integrations = override_integrations
 
+        self._integrations = {}
         self._connect_options = None
         self._dataclass_type = None
         self._dataclass_field = None
 
-        for override in custom_overrides:
-            override_class = override.__class__
-            self.custom_overrides[override_class] = override
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def name(self):
+        return self._name
 
     def resolve(
             self,
@@ -65,6 +72,9 @@ class ModelField(Base):
             dataclass_type: type,
             dataclass_field: Field
     ):
+        self._type = dataclass_field.type
+        self._name = dataclass_field.name
+
         self._connect_options = options
         self._dataclass_type = dataclass_type
         self._dataclass_field = dataclass_field
@@ -99,3 +109,15 @@ class ModelField(Base):
 
         self.request_dtos.resolve(options, dataclass_type, dataclass_field)
         self.response_dtos.resolve(options, dataclass_type, dataclass_field)
+
+        for integration in self.override_integrations:
+            self._integrations[integration.__class__] = integration
+
+        for integration_class, _ in integrations_registry.iterate():
+            if integration_class in self._integrations:
+                continue
+
+            model_class = integration_class.model_class
+
+            self._integrations[integration_class] = model_class()
+            self._integrations[integration_class].resolve(options, dataclass_type)

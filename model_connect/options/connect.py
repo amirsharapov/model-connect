@@ -1,6 +1,7 @@
 from model_connect.base import Base
 from model_connect.constants import UNDEFINED, is_undefined
-from model_connect.options import ModelFields, Model
+from model_connect.options.model.model import Model
+from model_connect.options.model_field.model_field import ModelFields
 
 
 class ConnectOptions(Base):

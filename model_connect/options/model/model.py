@@ -4,7 +4,7 @@ from model_connect.base import Base
 from model_connect.constants import UNDEFINED, is_undefined
 from model_connect.integrations.base import BaseIntegrationModel
 from model_connect.integrations import registry as integrations_registry
-from model_connect.options import ConnectOptions
+from model_connect.options.connect import ConnectOptions
 from model_connect.options.model.query_params import QueryParams
 
 _T = TypeVar('_T')

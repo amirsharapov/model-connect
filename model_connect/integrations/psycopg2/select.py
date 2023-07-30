@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, TypeVar
 
-from model_connect.integrations.psycopg2.commons import stream_results_to_model_type, stream_from_cursor
-from model_connect.registry import get_options
+from jinja2 import Template
 
+from model_connect.integrations.psycopg2.commons import stream_results_to_model_type, stream_from_cursor
+from model_connect.integrations.psycopg2.options.model import Psycopg2Model
+from model_connect.registry import get_model_field, get_model
 
 _T = TypeVar('_T')
 
@@ -112,10 +114,11 @@ def create_select_query(
 ) -> SelectQuery:
     vars_ = []
 
-    config = get_options(model_class)
+    model = get_model(model_class)
+    model = model.integrations.get(Psycopg2Model)
 
-    # pull from configs!
-    tablename = model_class.__name__.lower()
+    # TODO: ADD TYPE HINTS!
+    tablename = model.tablename
 
     filter_options = process_filter_options(
         model_class,
