@@ -1,83 +1,68 @@
-from dataclasses import Field
-from typing import Callable, Any
+from dataclasses import Field, dataclass, field
+from typing import Callable, Any, TYPE_CHECKING
 
 from model_connect.base import Base
-from model_connect.constants import UNDEFINED, is_undefined, iter_http_methods
-from model_connect.options import ConnectOptions
+from model_connect.constants import UNDEFINED, is_undefined, iter_http_methods, coalesce
+
+if TYPE_CHECKING:
+    from model_connect.options import ConnectOptions
 
 
-class RequestDtos(Base):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.dtos = {}
-
+class RequestDtos(dict[str, 'RequestDto']):
     def resolve(
             self,
-            options: ConnectOptions,
-            dataclass_type: type,
+            options: 'ConnectOptions',
             dataclass_field: Field
     ):
         for method in iter_http_methods():
-            if method not in self.dtos:
-                self.dtos[method] = RequestDto()
+            if method not in self:
+                self[method] = RequestDto()
 
-        for name, dto in self.dtos.items():
-            self.dtos[name] = (
-                dto
-                if isinstance(dto, RequestDto)
-                else RequestDto(**dto)
-                if isinstance(dto, dict)
-                else RequestDto()
+        for name, dto in self.items():
+            self[name] = coalesce(
+                dto,
+                RequestDto()
             )
 
-            self.dtos[name].resolve(
+            self[name].resolve(
                 options,
-                dataclass_type,
                 dataclass_field
             )
 
 
+@dataclass
 class RequestDto(Base):
-    def __init__(
-            self,
-            *,
-            include: bool = UNDEFINED,
-            require: bool = UNDEFINED,
-            preprocessor: Callable[[Any], Any] = UNDEFINED,
-    ):
-        super().__init__()
-        self.include = include
-        self.require = require
-        self.preprocessor = preprocessor
+    include: bool = UNDEFINED
+    require: bool = UNDEFINED
+    preprocessor: Callable[[Any], Any] = UNDEFINED
 
-        self._connect_options = None
-        self._dataclass_type = None
-        self._dataclass_field = None
+    _connect_options: 'ConnectOptions' = field(
+        init=False
+    )
+
+    _dataclass_field: Field = field(
+        init=False
+    )
 
     def resolve(
             self,
-            options: ConnectOptions,
-            dataclass_type: type,
+            options: 'ConnectOptions',
             dataclass_field: Field
     ):
         self._connect_options = options
-        self._dataclass_type = dataclass_type
         self._dataclass_field = dataclass_field
 
-        self.include = (
-            self.include
-            if not is_undefined(self.include)
-            else True
+        self.include = coalesce(
+            self.include,
+            True
         )
 
-        self.require = (
-            self.require
-            if not is_undefined(self.require)
-            else False
+        self.require = coalesce(
+            self.require,
+            False
         )
 
-        self.preprocessor = (
-            self.preprocessor
-            if not is_undefined(self.preprocessor)
-            else None
+        self.preprocessor = coalesce(
+            self.preprocessor,
+            None
         )

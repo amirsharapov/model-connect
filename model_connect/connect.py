@@ -1,8 +1,7 @@
 from dataclasses import is_dataclass
 
-from model_connect.options.connect import ConnectOptions
-
 from model_connect import registry
+from model_connect.options.connect import ConnectOptions
 
 
 def connect(dataclass_type: type, options: ConnectOptions = None):

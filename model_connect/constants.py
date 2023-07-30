@@ -7,6 +7,12 @@ def is_undefined(value):
     return value is UNDEFINED
 
 
+def coalesce(*args):
+    for arg in args:
+        if not is_undefined(arg):
+            return arg
+
+
 class HTTPMethods(Enum):
     GET = 'GET'
     POST = 'POST'

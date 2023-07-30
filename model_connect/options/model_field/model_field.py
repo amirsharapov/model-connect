@@ -1,62 +1,62 @@
-from dataclasses import Field, fields
+from dataclasses import Field, fields, dataclass, field
+from typing import TYPE_CHECKING
 
-from model_connect.base import Base
-from model_connect.constants import is_undefined, UNDEFINED
+from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField
 from model_connect.integrations import registry as integrations_registry
-from model_connect.options import ConnectOptions
+from model_connect.options.model.query_params import QueryParams
 from model_connect.options.model_field.model_field_dtos.request import RequestDtos
 from model_connect.options.model_field.model_field_dtos.response import ResponseDtos
 
+if TYPE_CHECKING:
+    from model_connect.options import ConnectOptions
 
-class ModelFields(Base):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields: dict[str, ModelField] = {}
 
+class ModelFields(dict):
     def resolve(
             self,
-            options: ConnectOptions,
+            options: 'ConnectOptions',
             dataclass_type: type
     ):
         # noinspection PyDataclass
         for dataclass_field in fields(dataclass_type):
             name = dataclass_field.name
 
-            if name not in self.fields:
-                self.fields[name] = ModelField()
+            if name not in self:
+                self[name] = ModelField()
 
-            self.fields[name].resolve(options, dataclass_type, dataclass_field)
+            self[name].resolve(options, dataclass_type, dataclass_field)
 
 
-class ModelField(Base):
-    def __init__(
-            self,
-            *,
-            can_sort: bool = UNDEFINED,
-            can_filter: bool = UNDEFINED,
-            request_dtos: dict[str, dict] = UNDEFINED,
-            response_dtos: dict[str, dict] = UNDEFINED,
-            query_params: tuple[str, ...] = UNDEFINED,
-            override_integrations: tuple['BaseIntegrationModelField', ...] = UNDEFINED,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self._type = None
-        self._name = None
+@dataclass
+class ModelField:
+    can_sort: bool = UNDEFINED
+    can_filter: bool = UNDEFINED
+    request_dtos: RequestDtos = UNDEFINED
+    response_dtos: ResponseDtos = UNDEFINED
+    query_params: tuple[str, ...] = UNDEFINED
+    override_integrations: tuple['BaseIntegrationModelField', ...] = UNDEFINED
 
-        self.can_sort = can_sort
-        self.can_filter = can_filter
-        self.request_dtos = request_dtos
-        self.response_dtos = response_dtos
-        self.query_params = query_params
+    _connect_options: 'ConnectOptions' = field(
+        init=False
+    )
 
-        self.override_integrations = override_integrations
+    _dataclass_field: Field = field(
+        init=False
+    )
 
-        self._integrations = {}
-        self._connect_options = None
-        self._dataclass_type = None
-        self._dataclass_field = None
+    _type: type = field(
+        init=False
+    )
+
+    _name: str = field(
+        init=False
+    )
+
+    _integrations: dict[type['BaseIntegrationModelField'], 'BaseIntegrationModelField'] = field(
+        init=False,
+        default_factory=dict
+    )
 
     @property
     def type(self):
@@ -66,9 +66,13 @@ class ModelField(Base):
     def name(self):
         return self._name
 
+    @property
+    def integrations(self):
+        return self._integrations
+
     def resolve(
             self,
-            options: ConnectOptions,
+            options: 'ConnectOptions',
             dataclass_type: type,
             dataclass_field: Field
     ):
@@ -76,35 +80,36 @@ class ModelField(Base):
         self._name = dataclass_field.name
 
         self._connect_options = options
-        self._dataclass_type = dataclass_type
         self._dataclass_field = dataclass_field
 
-        self.can_sort = (
-            self.can_sort
-            if not is_undefined(self.can_sort)
-            else True
+        self.can_sort = coalesce(
+            self.can_sort,
+            True
         )
 
-        self.can_filter = (
-            self.can_filter
-            if not is_undefined(self.can_filter)
-            else True
+        self.can_filter = coalesce(
+            self.can_filter,
+            True
         )
 
-        self.request_dtos = (
-            self.request_dtos
-            if not is_undefined(self.request_dtos)
-            else RequestDtos(**self.request_dtos)
-            if isinstance(self.request_dtos, dict)
-            else RequestDtos()
+        self.request_dtos = coalesce(
+            self.request_dtos,
+            RequestDtos()
         )
 
-        self.response_dtos = (
-            self.response_dtos
-            if not is_undefined(self.response_dtos)
-            else ResponseDtos(**self.response_dtos)
-            if isinstance(self.response_dtos, dict)
-            else ResponseDtos()
+        self.response_dtos = coalesce(
+            self.response_dtos,
+            ResponseDtos()
+        )
+
+        self.query_params = coalesce(
+            self.query_params,
+            QueryParams()
+        )
+
+        self.override_integrations = coalesce(
+            self.override_integrations,
+            ()
         )
 
         self.request_dtos.resolve(options, dataclass_type, dataclass_field)

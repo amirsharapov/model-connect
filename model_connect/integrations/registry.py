@@ -11,5 +11,5 @@ def add(integration: BaseIntegration):
 
 
 def iterate() -> Generator[tuple[type[BaseIntegration], BaseIntegration], None, None]:
-    for key, value in _registry.values():
+    for key, value in _registry.items():
         yield key, value

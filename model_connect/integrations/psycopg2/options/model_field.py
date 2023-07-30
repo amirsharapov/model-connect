@@ -1,7 +1,7 @@
 from model_connect.integrations.base import BaseIntegrationModelField
 
 
-class Psycopg2FieldOptions(BaseIntegrationModelField):
+class Psycopg2ModelField(BaseIntegrationModelField):
     def __init__(
             self,
             *args,

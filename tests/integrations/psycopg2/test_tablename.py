@@ -5,7 +5,7 @@ from model_connect.connect import connect
 from model_connect.options import ConnectOptions, ModelField, ModelFields, Model
 from model_connect.integrations.connect import connect_integrations
 from model_connect.integrations.psycopg2 import Psycopg2Integration
-from model_connect.integrations.psycopg2.options import get_tablename
+from model_connect.registry import get_model_integration
 
 
 class Tests(TestCase):
@@ -21,7 +21,7 @@ class Tests(TestCase):
             Psycopg2Integration()
         )
 
-        tablename = get_tablename(Person)
+        tablename = get_model_integration(Person, Psycopg2Integration).model_class.tablename
 
         self.assertEqual(tablename, 'person')
 
