@@ -2,7 +2,7 @@ from dataclasses import Field, fields, dataclass, field
 from typing import TYPE_CHECKING
 
 from model_connect.constants import UNDEFINED, coalesce
-from model_connect.integrations.base import BaseIntegrationModelField
+from model_connect.integrations.base import BaseIntegrationModelField, ModelFieldIntegrations
 from model_connect.integrations import registry as integrations_registry
 from model_connect.options.model.query_params import QueryParams
 from model_connect.options.model_field.model_field_dtos.request import RequestDtos
@@ -52,7 +52,7 @@ class ModelField:
         init=False
     )
 
-    _integrations: dict[type['BaseIntegrationModelField'], 'BaseIntegrationModelField'] = field(
+    _integrations: ModelFieldIntegrations = field(
         init=False,
         default_factory=dict
     )

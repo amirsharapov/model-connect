@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Optional
 
 from model_connect.options import Model, ModelField
 
@@ -21,5 +21,5 @@ def get_model_options(dataclass_type: type) -> 'Model':
     return get(dataclass_type).model
 
 
-def get_model_field_options(dataclass_type: type, field_name: str) -> 'ModelField':
-    return get(dataclass_type).model_fields[field_name]
+def get_model_field_options(dataclass_type: type, field_name: str) -> Optional['ModelField']:
+    return get(dataclass_type).model_fields.get(field_name)

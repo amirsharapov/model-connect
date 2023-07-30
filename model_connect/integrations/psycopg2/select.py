@@ -21,6 +21,9 @@ def process_filter_options(
         filter_options: dict,
         vars_: list
 ):
+    if not filter_options:
+        return
+
     for field, value in filter_options.items():
         field = get_model_field_options(dataclass_type, field)
 
@@ -60,7 +63,8 @@ def process_sort_options(
         cls: type[_T],
         sort_options: dict
 ):
-    options = []
+    if not sort_options:
+        return
 
     for field, direction in sort_options.items():
         field = get_model_field_options(cls, field)
@@ -86,6 +90,9 @@ def process_pagination_options(
         pagination_options: dict,
         vars_: list
 ):
+    if not pagination_options:
+        return
+
     result = {}
 
     if not pagination_options:
@@ -145,34 +152,33 @@ def create_select_query(
         FROM
             {{ tablename }}
 
-        {%- if filter_options is not none %}
+        {%- if filter_options %}
             WHERE
-            {%- for key, operator, value in filter_options %}
-            {{ key }} {{ operator }} %s
+            {%- for filter in filter_options %}
+            {{ filter.column }} {{ filter.operator }} %s
             {%- if not loop.last %}
             AND
             {%- endif %}
             {%- endfor %}
         {%- endif %}
 
-        {%- if sort_options is not none %}
+        {%- if sort_options %}
             ORDER BY
-            {%- for key, direction in sort_options %}
-            {{ key }} {{ value }}
-            {%- if not loop.last %}
+            {%- for option in sort_options %}
+            {{ option.column }} {{ option.direction }}
+            {%- if not loop.last -%}
             ,
-            {%- endif %}
+            {%- endif -%}
             {%- endfor %}
         {%- endif %}
 
-        {%- if pagination_options.limit is not none %}
+        {%- if pagination_options.limit %}
             LIMIT %s
         {%- endif %}
 
-        {%- if pagination_options.offset is not none %}
+        {%- if pagination_options.offset %}
             OFFSET %s
         {%- endif %}
-        ;
         ''')
 
     query = template.render(

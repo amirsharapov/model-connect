@@ -14,6 +14,7 @@ class RequestDtos(dict[str, 'RequestDto']):
             dataclass_field: Field
     ):
         for method in iter_http_methods():
+            method = method.lower()
             if method not in self:
                 self[method] = RequestDto()
 
