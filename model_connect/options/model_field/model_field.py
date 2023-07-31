@@ -87,10 +87,7 @@ class ModelField:
             type_args = self._type.__args__
 
             if len(type_args) == 2 and NoneType in type_args:
-                self._type = coalesce(
-                    type_args[0],
-                    type_args[1]
-                )
+                self._type = coalesce(*type_args)
 
         self._connect_options = options
         self._dataclass_field = dataclass_field
