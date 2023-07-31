@@ -388,7 +388,28 @@ class User:
 connect(User)  # <- The options (ConnectOptions, Mode, etc.) are inferred from the dataclass
 ```
 
-# Contributing
+# Developer Guide
+
+To rebuild distribution:
+
+```bash
+python setup.py sdist
+```
+
+To upload to PyPi:
+
+```bash
+twine upload dist/*
+```
+
+To do both:
+    
+```bash
+python setup.py sdist
+twine upload dist/*
+```
+
+## Contributing
 
 TBD
 
