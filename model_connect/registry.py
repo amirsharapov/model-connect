@@ -17,6 +17,10 @@ def get(dataclass_type: type) -> 'ConnectOptions':
     return _registry[dataclass_type]
 
 
+def has(dataclass_type: type) -> bool:
+    return dataclass_type in _registry
+
+
 def get_model_options(dataclass_type: type) -> 'Model':
     return get(dataclass_type).model
 
