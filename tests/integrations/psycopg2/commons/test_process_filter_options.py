@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from unittest import TestCase
 
 from model_connect import connect
+from model_connect.integrations.psycopg2.common.processing import ProcessedFilter
 from model_connect.integrations.psycopg2.select import process_filter_options
 
 
@@ -46,6 +47,12 @@ class Tests(TestCase):
             {'column': 'id', 'operator': 'IN', 'value': '%s'},
             {'column': 'computers_owned', 'operator': 'IN', 'value': '%s'},
             {'column': 'age', 'operator': '=', 'value': '%s'}
+        ]
+
+        expected = [
+            ProcessedFilter(**filter_) for
+            filter_ in
+            expected
         ]
 
         self.assertEqual(expected, actual)

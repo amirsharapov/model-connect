@@ -36,5 +36,6 @@ class Psycopg2ModelField(BaseIntegrationModelField):
 
         self.include_in_select = coalesce(
             self.include_in_select,
+            model_field.dataclass_field.init,
             True
         )

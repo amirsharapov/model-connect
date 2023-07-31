@@ -1,12 +1,15 @@
 from dataclasses import dataclass, field as dataclass_field
+from functools import cache
 from typing import Any, TypeVar
 
 from jinja2 import Template
 from psycopg2.extras import DictCursor
 
+from model_connect import registry
+from model_connect.integrations.psycopg2 import Psycopg2ModelField
 from model_connect.integrations.psycopg2.common.processing import process_filter_options, process_sort_options, \
     process_pagination_options
-from model_connect.integrations.psycopg2.common.streaming import stream_results_to_model_type, stream_from_cursor
+from model_connect.integrations.psycopg2.common.streaming import stream_results_to_dataclass, stream_from_cursor
 from model_connect.integrations.psycopg2.options.model import Psycopg2Model
 from model_connect.registry import get_model_field_options, get_model_options
 
@@ -21,8 +24,28 @@ class SelectSQL:
     )
 
 
+@cache
+def generate_select_columns(model_class: type[_T]) -> list[str]:
+    columns = []
+
+    model_fields = registry.get(model_class).model_fields.values()
+
+    for model_field in model_fields:
+        model_field = model_field.integrations.get(Psycopg2ModelField)
+
+        if not model_field.include_in_select:
+            continue
+
+        columns.append(
+            model_field.column_name
+        )
+
+    return columns
+
+
 def create_select_query(
         model_class: type[_T],
+        columns: list[str] = None,
         filter_options: dict = None,
         sort_options: dict = None,
         pagination_options: dict = None
@@ -32,18 +55,21 @@ def create_select_query(
     model = get_model_options(model_class)
     model = model.integrations.get(Psycopg2Model)
 
+    if columns is None:
+        columns = generate_select_columns(
+            model_class
+        )
+
     filter_options = process_filter_options(
         model_class,
         filter_options,
         vars_
     )
-    filter_options = list(filter_options)
 
     sort_options = process_sort_options(
         model_class,
         sort_options
     )
-    sort_options = list(sort_options)
 
     pagination_options = process_pagination_options(
         pagination_options,
@@ -52,7 +78,12 @@ def create_select_query(
 
     template = Template('''
         SELECT
-            *
+            {%- for column in columns %}
+            {{ column }}
+            {%- if not loop.last %}
+            ,
+            {%- endif %}
+            {%- endfor %}
 
         FROM
             {{ tablename }}
@@ -87,6 +118,7 @@ def create_select_query(
         ''')
 
     sql = template.render(
+        columns=columns,
         tablename=model.tablename,
         filter_options=filter_options,
         sort_options=sort_options,
@@ -102,13 +134,27 @@ def create_select_query(
     )
 
 
-def stream_select(cursor: DictCursor, model_class: type[_T], chunk_size: int = 1000):
-    query = create_select_query(model_class)
+def stream_select(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        columns: list[str] = None,
+        chunk_size: int = 1000,
+        filter_options: dict = None,
+        sort_options: dict = None,
+        pagination_options: dict = None
+):
+    query = create_select_query(
+        dataclass_type,
+        columns,
+        filter_options,
+        sort_options,
+        pagination_options
+    )
 
     cursor.execute(query.sql, query.vars)
 
     results = stream_from_cursor(cursor, chunk_size)
-    results = stream_results_to_model_type(results, model_class)
+    results = stream_results_to_dataclass(results, dataclass_type)
 
     for result in results:
         yield result

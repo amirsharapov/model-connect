@@ -59,6 +59,10 @@ class ModelField:
     )
 
     @property
+    def dataclass_field(self):
+        return self._dataclass_field
+
+    @property
     def type(self):
         return self._type
 

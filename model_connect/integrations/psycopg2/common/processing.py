@@ -1,15 +1,19 @@
 from dataclasses import dataclass
 from typing import TypeVar, Optional
 
+from model_connect.constants import is_undefined, UNDEFINED
 from model_connect.registry import get_model_field_options
 
 _T = TypeVar('_T')
 
 
 class ProcessedFilters(list['ProcessedFilter']):
-    def __init__(self, vars_: list, *args, **kwargs):
+    def __init__(self, vars_: list = UNDEFINED, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.vars = vars_ or []
+        if is_undefined(vars_):
+            vars_ = []
+
+        self.vars = vars_
 
 
 @dataclass
@@ -95,7 +99,7 @@ def process_filter_options(
                 if value_ is None and operator in ('!=', '<>'):
                     operator = 'IS NOT'
 
-                result.vars.append(value)
+                result.vars.append(value_)
                 result.append(
                     ProcessedFilter(
                         column=field.name,
@@ -106,11 +110,15 @@ def process_filter_options(
 
     return result
 
+
 def process_sort_options(
         cls: type[_T],
         sort_options: dict
 ):
     result = ProcessedSortingOptions()
+
+    if not sort_options:
+        return result
 
     for field, direction in sort_options.items():
         field = get_model_field_options(cls, field)

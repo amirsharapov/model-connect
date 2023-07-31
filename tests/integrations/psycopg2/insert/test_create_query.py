@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 from unittest import TestCase
 
 from model_connect import connect
@@ -8,7 +9,7 @@ from model_connect.options import ConnectOptions, ModelFields, ModelField
 
 @dataclass
 class Person:
-    id: int
+    id: Optional[int]
     name: str
     age: int
 
@@ -28,9 +29,9 @@ connect(
 class Tests(TestCase):
     def test(self):
         data = [
-            Person(1, 'bob', 12),
-            Person(2, 'joe', 13),
-            Person(3, 'jane', 14),
+            Person(None, 'bob', 12),
+            Person(None, 'joe', 13),
+            Person(None, 'jane', 14),
         ]
 
         sql = create_insert_query(
