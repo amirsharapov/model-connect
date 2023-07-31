@@ -2,6 +2,7 @@ from dataclasses import dataclass, field as dataclass_field
 from typing import Any, TypeVar
 
 from jinja2 import Template
+from psycopg2.extras import DictCursor
 
 from model_connect.integrations.psycopg2.common.processing import process_filter_options, process_sort_options, \
     process_pagination_options
@@ -92,13 +93,16 @@ def create_select_query(
         pagination_options=pagination_options
     )
 
+    sql = ' '.join(sql.split())
+    sql = sql.strip()
+
     return SelectSQL(
-        sql=sql,
-        vars=vars_
+        sql,
+        vars_
     )
 
 
-def stream_select(model_class: type[_T], cursor: Any, chunk_size: int = 1000):
+def stream_select(cursor: DictCursor, model_class: type[_T], chunk_size: int = 1000):
     query = create_select_query(model_class)
 
     cursor.execute(query.sql, query.vars)

@@ -57,9 +57,7 @@ class Model:
         for integration in self.override_integrations:
             self._integrations[integration.__class__] = integration
 
-        for integration_class, _ in integrations_registry.iterate():
-            model_class = integration_class.model_class
-
+        for name, (model_class, model_field_class) in integrations_registry.iterate():
             if model_class not in self._integrations:
                 self._integrations[model_class] = model_class()
 
