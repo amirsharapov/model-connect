@@ -45,11 +45,7 @@ class ModelField:
         init=False
     )
 
-    _type: type = field(
-        init=False
-    )
-
-    _type_raw: str = field(
+    _type: str = field(
         init=False
     )
 
@@ -69,10 +65,6 @@ class ModelField:
     @property
     def type(self):
         return self._type
-
-    @property
-    def type_raw(self):
-        return self._type_raw
 
     @property
     def name(self):
