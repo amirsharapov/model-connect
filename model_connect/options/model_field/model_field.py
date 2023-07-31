@@ -1,4 +1,5 @@
 from dataclasses import Field, fields, dataclass, field
+from types import NoneType
 from typing import TYPE_CHECKING
 
 from model_connect.constants import UNDEFINED, coalesce
@@ -85,7 +86,7 @@ class ModelField:
         if hasattr(self._type, '__args__'):
             type_args = self._type.__args__
 
-            if len(type_args) == 2 and None in type_args:
+            if len(type_args) == 2 and NoneType in type_args:
                 self._type = coalesce(
                     type_args[0],
                     type_args[1]
