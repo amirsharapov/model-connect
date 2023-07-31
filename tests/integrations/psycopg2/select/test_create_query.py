@@ -26,7 +26,7 @@ class Tests(TestCase):
             }
         )
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM person WHERE id = %s', sql)
         self.assertEqual([1], query.vars)
@@ -44,7 +44,7 @@ class Tests(TestCase):
             }
         )
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM person WHERE id = %s AND name IS %s', sql)
         self.assertEqual([1, None], query.vars)
@@ -66,7 +66,7 @@ class Tests(TestCase):
             }
         )
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM person WHERE id = %s AND name like %s AND name != %s AND name != %s', sql)
         self.assertEqual([1, '%o%', 'bob', 'joe'], query.vars)
@@ -82,7 +82,7 @@ class Tests(TestCase):
             }
         )
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM person WHERE id IN %s', sql)
         self.assertEqual([(1, 2, 3)], query.vars)
@@ -99,7 +99,7 @@ class Tests(TestCase):
 
         query = create_select_query(Person)
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM people', sql)
         self.assertEqual([], query.vars)
@@ -121,7 +121,7 @@ class Tests(TestCase):
 
         query = create_select_query(Person)
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM persons', sql)
         self.assertEqual([], query.vars)
@@ -144,7 +144,7 @@ class Tests(TestCase):
             }
         )
 
-        sql = ' '.join(query.query.split())
+        sql = ' '.join(query.sql.split())
 
         self.assertEqual('SELECT * FROM people ORDER BY id ASC, name DESC', sql)
         self.assertEqual([], query.vars)

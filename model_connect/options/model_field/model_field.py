@@ -106,11 +106,6 @@ class ModelField:
             ResponseDtos()
         )
 
-        self.query_params = coalesce(
-            self.query_params,
-            QueryParams()
-        )
-
         self.override_integrations = coalesce(
             self.override_integrations,
             ()
