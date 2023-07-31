@@ -1,6 +1,5 @@
 from dataclasses import dataclass, is_dataclass
 
-from model_connect import registry
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField
 from model_connect.options import ConnectOptions, ModelField
@@ -43,7 +42,12 @@ class Psycopg2ModelField(BaseIntegrationModelField):
             include_in_insert
         )
 
+        include_in_select = True
+
+        if is_dataclass(model_field.type):
+            include_in_select = False
+
         self.include_in_select = coalesce(
             self.include_in_select,
-            not registry.has(model_field.type)
+            include_in_select
         )
