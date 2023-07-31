@@ -7,7 +7,7 @@ long_description = long_description.read_text()
 
 setup(
     name='model-connect',
-    version='0.0.1',
+    version='0.0.3',
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(

@@ -3,7 +3,7 @@
 ModelConnect is a library that enables users to connect their dataclass models with other libraries
 without writing additional boilerplate code.
 
-Our goals and how we plan to achieve them:
+ModelConnect goals and how it achieves them:
 
 - Simplicity
     - Fluent API
