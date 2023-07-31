@@ -49,6 +49,10 @@ class ModelField:
         init=False
     )
 
+    _type_raw: str = field(
+        init=False
+    )
+
     _name: str = field(
         init=False
     )
@@ -67,6 +71,10 @@ class ModelField:
         return self._type
 
     @property
+    def type_raw(self):
+        return self._type_raw
+
+    @property
     def name(self):
         return self._name
 
@@ -81,6 +89,15 @@ class ModelField:
     ):
         self._type = dataclass_field.type
         self._name = dataclass_field.name
+
+        if hasattr(self._type, '__args__'):
+            type_args = self._type.__args__
+
+            if len(type_args) == 2 and None in type_args:
+                self._type = coalesce(
+                    type_args[0],
+                    type_args[1]
+                )
 
         self._connect_options = options
         self._dataclass_field = dataclass_field
