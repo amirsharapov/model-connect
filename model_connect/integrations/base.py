@@ -1,16 +1,11 @@
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeVar, Generic
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from model_connect.options import ConnectOptions, ModelField
 
 _T = TypeVar('_T')
-
-
-class BaseIntegration:
-    model_class: type['BaseIntegrationModel'] = None
-    model_field_class: type['BaseIntegrationModelField'] = None
 
 
 @dataclass

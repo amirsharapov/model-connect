@@ -5,8 +5,8 @@ from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField, ModelFieldIntegrations
 from model_connect.integrations import registry as integrations_registry
 from model_connect.options.model.query_params import QueryParams
-from model_connect.options.model_field.model_field_dtos.request import RequestDtos
-from model_connect.options.model_field.model_field_dtos.response import ResponseDtos
+from model_connect.options.model_field.dtos.request import RequestDtos
+from model_connect.options.model_field.dtos.response import ResponseDtos
 
 if TYPE_CHECKING:
     from model_connect.options import ConnectOptions
@@ -31,6 +31,7 @@ class ModelFields(dict[str, 'ModelField']):
 class ModelField:
     can_sort: bool = UNDEFINED
     can_filter: bool = UNDEFINED
+    is_identifier: bool = UNDEFINED
     request_dtos: RequestDtos = UNDEFINED
     response_dtos: ResponseDtos = UNDEFINED
     query_params: tuple[str, ...] = UNDEFINED
@@ -90,6 +91,11 @@ class ModelField:
             True
         )
 
+        self.is_identifier = coalesce(
+            self.is_identifier,
+            False
+        )
+
         self.request_dtos = coalesce(
             self.request_dtos,
             RequestDtos()
@@ -116,9 +122,7 @@ class ModelField:
         for integration in self.override_integrations:
             self._integrations[integration.__class__] = integration
 
-        for integration_class, _ in integrations_registry.iterate():
-            model_field_class = integration_class.model_field_class
-
+        for name, (model_class, model_field_class) in integrations_registry.iterate():
             if model_field_class not in self._integrations:
                 self._integrations[model_field_class] = model_field_class()
 

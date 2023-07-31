@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from inspect import isgenerator
 from typing import Any, TypeVar
 
@@ -14,7 +14,9 @@ _T = TypeVar('_T')
 @dataclass
 class SelectQuery:
     query: str
-    vars: tuple[Any, ...] | dict[str, Any] | list[Any] = None
+    vars: list[Any] = dataclass_field(
+        default_factory=list
+    )
 
 
 def process_filter_options(
@@ -22,31 +24,6 @@ def process_filter_options(
         filter_options: dict,
         vars_: list
 ):
-    """
-    Complex filter option conversion cases:
-    {
-        'name': {
-            '=': 'bob',
-            '!=': [
-                'joe',
-                'jane'
-            ]
-        },
-        'id': [
-            1,
-            2,
-            3
-        ],
-        'age': 12
-    }
-    converts to
-    [
-        'name', '=', 'bob',
-        'name', '!=', 'joe',
-        'name', '!=', 'jane',
-        'id', 'IN', (1, 2, 3)
-    ]
-    """
     if not filter_options:
         return
 
@@ -60,24 +37,28 @@ def process_filter_options(
             continue
 
         if isinstance(operators_object, (list, set, tuple)):
+            values = operators_object
             operators_object = {
-                'IN': tuple(operators_object)
+                'IN': tuple(values)
             }
 
         if not isinstance(operators_object, dict):
+            value = operators_object
             operators_object = {
-                '=': operators_object
+                '=': value
             }
 
         for operator, value in operators_object.items():
-            if isinstance(value, (list, set, tuple)) and operator in ('IN', 'NOT IN'):
+            operator = operator.upper()
+
+            if operator in ('IN', 'NOT IN'):
                 value = tuple(value)
                 vars_.append(value)
 
                 yield {
                     'column': field.name,
                     'operator': operator,
-                    'value': value
+                    'value': '%s'
                 }
 
                 continue
@@ -148,10 +129,6 @@ def process_pagination_options(
         vars_.append(result['offset'])
 
     return result
-
-
-def create_select_query_template() -> SelectQuery:
-    ...
 
 
 def create_select_query(

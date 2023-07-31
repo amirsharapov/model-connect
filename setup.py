@@ -21,6 +21,5 @@ setup(
         ]
     ),
     install_requires=[
-        'setuptools~=60.2.0',
     ]
 )

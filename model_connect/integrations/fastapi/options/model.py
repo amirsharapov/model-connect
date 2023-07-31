@@ -1,33 +1,34 @@
-from model_connect.constants import UNDEFINED
+from dataclasses import dataclass, field
+
+from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModel
 from model_connect.options import ConnectOptions
 
 
+@dataclass
 class FastAPIModel(BaseIntegrationModel):
-    def __init__(
-            self,
-            *,
-            resource_path: str = UNDEFINED,
-            resource_version: int = UNDEFINED,
-            **kwargs
-    ):
-        super().__init__(**kwargs)
-        self.resource_path = resource_path
-        self.resource_version = resource_version
+    resource_path: str = UNDEFINED
+    resource_version: int = UNDEFINED
+    tag_name: str = UNDEFINED
 
-        self._connect_options = None
+    _connect_options: ConnectOptions = field(
+        init=False
+    )
 
-    def resolve(self, connect_options: ConnectOptions, dataclass_type: type):
+    def resolve(self, connect_options: ConnectOptions):
         self._connect_options = connect_options
 
-        self.resource_path = (
-            self.resource_path
-            if not self.resource_path is UNDEFINED
-            else dataclass_type.__name__.lower()
+        self.resource_path = coalesce(
+            self.resource_path,
+            self._connect_options.dataclass_type.__name__.lower()
         )
 
-        self.resource_version = (
-            self.resource_version
-            if not self.resource_version is UNDEFINED
-            else 1
+        self.resource_version = coalesce(
+            self.resource_version,
+            1
+        )
+
+        self.tag_name = coalesce(
+            self.tag_name,
+            self._connect_options.dataclass_type.__name__
         )

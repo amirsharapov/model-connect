@@ -109,23 +109,23 @@ you can remove these modules and just use the model as the scaffolding.
 ```python
 from fastapi import Depends
 from model_connect.integrations.fastapi import (
-    create_router,
-    create_response_dtos,
-    create_response_dto,
-    get_from_post_request_dto,
-    get_from_post_request_dtos,
-    get_from_put_request_dto,
-    get_from_patch_request_dto,
-    get_filter_options,
-    get_pagination_options,
-    get_sort_options
+  create_router,
+  create_response_dtos,
+  create_response_dto,
+  get_from_post_request_dto,
+  get_from_post_request_dtos,
+  get_from_put_request_dto,
+  get_from_patch_request_dto,
+  get_filter_options,
+  get_pagination_options,
+  get_sort_options
 )
 from model_connect.integrations.psycopg2 import (
-    stream_select,
-    stream_insert,
-    stream_update,
-    stream_partial_update,
-    stream_delete,
+  stream_select,
+  stream_insert,
+  stream_update,
+  stream_partial_update,
+  stream_delete,
 )
 
 from src.models import User
@@ -140,93 +140,93 @@ def get_users(
         pagination_options: dict = Depends(get_pagination_options(User)),
         sort_options: dict = Depends(get_sort_options(User))
 ):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dtos(
-            stream_select(
-                User,
-                cursor,
-                filter_options=filter_options,
-                pagination_options=pagination_options,
-                sort_options=sort_options
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dtos(
+      stream_select(
+        User,
+        cursor,
+        filter_options=filter_options,
+        pagination_options=pagination_options,
+        sort_options=sort_options
+      )
+    )
 
 
 @router.get('/{resource_id}')
 def get_user(resource_id: int):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dto(
-            stream_select(
-                User,
-                cursor,
-                filter_options={'id': resource_id}
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dto(
+      stream_select(
+        User,
+        cursor,
+        filter_options={'id': resource_id}
+      )
+    )
 
 
 @router.post('')
 def post_user(user: Depends(get_from_post_request_dto(User))):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dto(
-            stream_insert(
-                cursor,
-                user
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dto(
+      stream_insert(
+        cursor,
+        user
+      )
+    )
 
 
 @router.post('/bulk')
 def post_users(users: Depends(get_from_post_request_dto(User))):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dtos(
-            stream_insert(
-                cursor,
-                users,
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dtos(
+      stream_insert(
+        cursor,
+        users,
+      )
+    )
 
 
 @router.put('/{resource_id}')
 def put_user(user: Depends(get_from_put_request_dto(User))):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dto(
-            stream_update(
-                cursor,
-                user
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dto(
+      stream_update(
+        cursor,
+        user
+      )
+    )
 
 
 @router.patch('/{resource_id}')
 def patch_user(user: Depends(get_from_patch_request_dto(User))):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dto(
-            stream_partial_update(
-                cursor,
-                user
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dto(
+      stream_partial_update(
+        cursor,
+        user
+      )
+    )
 
 
 @router.delete('/{resource_id}')
 def delete_user(resource_id: int):
-    connection = open_db_connection()
-    with connection.cursor() as cursor:
-        return create_response_dto(
-            stream_delete(
-                cursor,
-                User,
-                filter_options={
-                    'id': resource_id
-                }
-            )
-        )
+  connection = open_db_connection()
+  with connection.cursor() as cursor:
+    return create_response_dto(
+      stream_delete(
+        cursor,
+        User,
+        filter_options={
+          'id': resource_id
+        }
+      )
+    )
 ```
 
 Done!
@@ -349,21 +349,19 @@ connect(
         model=Model(
             override_integrations=(
                 Psycopg2Model(
-                    tablename='users'
-                    # <- overrides the default behaviour which is snake_case from dataclass name ('user')
+                    tablename='users' # <- overrides default snake case dataclass name ('user')
                 ),
             )
         ),
-        fields=ModelFields(
+        model_fields=ModelFields(
             id=ModelField(
-                is_identifier=True,
-                # <- metadata. downstream nodes (i.e. psycopg2) use this value to determine behaviour
-                validators=(),  # <- validators
-                dtos=(),  # <- dtos
-                # integrations=(...),  # <- no overrides so integrations will attempt to infer attributes from previous options
+                is_identifier=True, # <- downstream nodes (i.e. Psycopg2ModelField) read this during resolution
+                # validators=(),  # <- validators
+                # request_dtos=RequestDtos(),  # <- request dtos if we needed them
+                # integrations=(...),  # <- no overrides - ModelField will infer
             ),
             name=ModelField(),
-            # age=ModelField(), # <- not specified so ModelFields will attempt to infer attributes from dataclass
+            # age=ModelField(), # <- not specified - ModelFields will infer
         )
     )
 )
