@@ -8,7 +8,7 @@ from psycopg2.extras import DictCursor
 from model_connect import registry
 from model_connect.integrations.psycopg2 import Psycopg2ModelField
 from model_connect.integrations.psycopg2.common.processing import process_filter_options, process_sort_options, \
-    process_pagination_options
+    process_pagination_options, ProcessedFilters
 from model_connect.integrations.psycopg2.common.streaming import stream_results_to_dataclass, stream_from_cursor
 from model_connect.integrations.psycopg2.options.model import Psycopg2Model
 from model_connect.registry import get_model_field_options, get_model_options

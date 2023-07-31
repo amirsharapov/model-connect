@@ -52,3 +52,51 @@ class Tests(TestCase):
             ],
             sql.vars
         )
+
+    def test_specific_columns(self):
+        data = [
+            Person(None, 'bob', 12),
+            Person(None, 'joe', 13),
+            Person(None, 'jane', 14),
+        ]
+
+        sql = create_insert_query(
+            Person,
+            data,
+            columns=['name']
+        )
+
+        self.assertEqual(
+            'INSERT INTO person ( name ) VALUES %s RETURNING *',
+            sql.sql
+        )
+
+        self.assertEqual(
+            [
+                ('bob',),
+                ('joe',),
+                ('jane',),
+            ],
+            sql.vars
+        )
+
+    def test_one_row(self):
+        data = Person(None, 'bob', 12)
+
+        sql = create_insert_query(
+            Person,
+            data
+        )
+
+        self.assertEqual(
+            'INSERT INTO person ( name , age ) VALUES %s RETURNING *',
+            sql.sql
+        )
+
+        self.assertEqual(
+            [(
+                'bob',
+                12,
+            )],
+            sql.vars
+        )

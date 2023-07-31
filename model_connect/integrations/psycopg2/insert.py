@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field, asdict
+from functools import cache
 from typing import Iterable, TypeVar
 
 from jinja2 import Template
@@ -20,9 +21,8 @@ class InsertSQL:
     )
 
 
-def generate_insert_columns(
-        model_class: type[_T],
-) -> list[str]:
+@cache
+def generate_insert_columns(model_class: type[_T]) -> list[str]:
     columns = []
 
     model_fields = registry.get(model_class).model_fields.values()
@@ -54,18 +54,7 @@ def create_insert_query(
         data = [data]
 
     if not columns:
-        model_fields = registry.get(model_class).model_fields.values()
-
-        columns = []
-        for model_field in model_fields:
-            model_field = model_field.integrations.get(Psycopg2ModelField)
-
-            if not model_field.include_in_insert:
-                continue
-
-            columns.append(
-                model_field.column_name
-            )
+        columns = generate_insert_columns(model_class)
 
     values = []
 
