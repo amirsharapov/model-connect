@@ -6,12 +6,14 @@ from jinja2 import Template
 from psycopg2.extras import DictCursor
 
 from model_connect import registry
-from model_connect.integrations.psycopg2 import Psycopg2ModelField
-from model_connect.integrations.psycopg2.common.processing import process_filter_options, process_sort_options, \
-    process_pagination_options, ProcessedFilters
+from model_connect.integrations.psycopg2.common.processing import (
+    process_filter_options,
+    process_sort_options,
+    process_pagination_options
+)
 from model_connect.integrations.psycopg2.common.streaming import stream_results_to_dataclass, stream_from_cursor
 from model_connect.integrations.psycopg2.options.model import Psycopg2Model
-from model_connect.registry import get_model_field_options, get_model_options
+from model_connect.registry import get_model
 
 _T = TypeVar('_T')
 
@@ -31,7 +33,7 @@ def generate_select_columns(model_class: type[_T]) -> list[str]:
     model_fields = registry.get(model_class).model_fields.values()
 
     for model_field in model_fields:
-        model_field = model_field.integrations.get(Psycopg2ModelField)
+        model_field = model_field.integrations.get('psycopg2')
 
         if not model_field.include_in_select:
             continue
@@ -52,7 +54,7 @@ def create_select_query(
 ) -> SelectSQL:
     vars_ = []
 
-    model = get_model_options(model_class)
+    model = get_model(model_class)
     model = model.integrations.get(Psycopg2Model)
 
     if columns is None:
@@ -158,3 +160,28 @@ def stream_select(
 
     for result in results:
         yield result
+
+
+def stream_select_distinct(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        column: str,
+        chunk_size: int = 1000,
+        filter_options: dict = None,
+        sort_options: dict = None,
+        pagination_options: dict = None
+):
+    query = create_select_query(
+        dataclass_type,
+        [column],
+        filter_options,
+        sort_options,
+        pagination_options
+    )
+
+    cursor.execute(query.sql, query.vars)
+
+    results = stream_from_cursor(cursor, chunk_size)
+
+    for result in results:
+        yield result[column]

@@ -5,12 +5,15 @@ from typing import TYPE_CHECKING
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField, ModelFieldIntegrations
 from model_connect.integrations import registry as integrations_registry
-from model_connect.options.model.query_params import QueryParams
 from model_connect.options.model_field.dtos.request import RequestDtos
 from model_connect.options.model_field.dtos.response import ResponseDtos
 
 if TYPE_CHECKING:
     from model_connect.options import ConnectOptions
+
+
+def has_default_value(dataclass_field: Field):
+    return dataclass_field.default is not dataclass_field.default_factory
 
 
 class ModelFields(dict[str, 'ModelField']):
@@ -32,6 +35,7 @@ class ModelFields(dict[str, 'ModelField']):
 class ModelField:
     can_sort: bool = UNDEFINED
     can_filter: bool = UNDEFINED
+    can_group: bool = UNDEFINED
     is_identifier: bool = UNDEFINED
     is_required_on_init: bool = UNDEFINED
     request_dtos: RequestDtos = UNDEFINED
@@ -78,7 +82,7 @@ class ModelField:
 
     def resolve(
             self,
-            options: 'ConnectOptions',
+            connect_options: 'ConnectOptions',
             dataclass_field: Field
     ):
         self._inferred_type = dataclass_field.type
@@ -90,7 +94,7 @@ class ModelField:
             if len(type_args) == 2 and NoneType in type_args:
                 self._inferred_type = coalesce(*type_args)
 
-        self._connect_options = options
+        self._connect_options = connect_options
         self._dataclass_field = dataclass_field
 
         self.can_sort = coalesce(
@@ -100,6 +104,11 @@ class ModelField:
 
         self.can_filter = coalesce(
             self.can_filter,
+            True
+        )
+
+        self.can_group = coalesce(
+            self.can_group,
             True
         )
 
@@ -113,10 +122,7 @@ class ModelField:
         if dataclass_field.init is False:
             is_required_on_init = False
 
-        if dataclass_field.default is not None:
-            is_required_on_init = False
-
-        if dataclass_field.default_factory is not None:
+        if has_default_value(dataclass_field):
             is_required_on_init = False
 
         self.is_required_on_init = coalesce(
@@ -139,14 +145,19 @@ class ModelField:
             ()
         )
 
-        self.request_dtos.resolve(options, dataclass_field)
-        self.response_dtos.resolve(options, dataclass_field)
+        self.request_dtos.resolve(connect_options, dataclass_field)
+        self.response_dtos.resolve(connect_options, dataclass_field)
 
         for integration in self.override_integrations:
-            self._integrations[integration.__class__] = integration
+            name = integration.integration_name
 
-        for name, (model_class, model_field_class) in integrations_registry.iterate():
-            if model_field_class not in self._integrations:
-                self._integrations[model_field_class] = model_field_class()
+            self._integrations[name] = integration
 
-            self._integrations[model_field_class].resolve(options, self)
+        for name, _, model_field_class in integrations_registry.iterate():
+            if name in self._integrations:
+                continue
+
+            model_field = model_field_class()
+            model_field.resolve(connect_options, self)
+
+            self._integrations[name] = model_field

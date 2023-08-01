@@ -32,6 +32,6 @@ def get(name: str) -> tuple[type[_ModelT], type[_ModelFieldT]]:
     return _registry[name]
 
 
-def iterate() -> Generator[tuple[str, tuple[type[_ModelT], type[_ModelFieldT]]], None, None]:
-    for name, (model, model_field) in _registry.items():
-        yield name, (model, model_field)
+def iterate() -> Generator[tuple[str, type[_ModelT], type[_ModelFieldT]], None, None]:
+    for name, (model_class, model_field_class) in _registry.items():
+        yield name, model_class, model_field_class

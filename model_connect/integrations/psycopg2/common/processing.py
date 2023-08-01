@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import TypeVar, Optional
 
+from model_connect import registry
 from model_connect.constants import is_undefined, UNDEFINED
-from model_connect.registry import get_model_field_options
+from model_connect.registry import get_model_field
 
 _T = TypeVar('_T')
 
@@ -53,7 +54,7 @@ def process_filter_options(
         return result
 
     for field, operators_object in filter_options.items():
-        field = get_model_field_options(dataclass_type, field)
+        field = get_model_field(dataclass_type, field)
 
         if not field:
             continue
@@ -112,7 +113,7 @@ def process_filter_options(
 
 
 def process_sort_options(
-        cls: type[_T],
+        dataclass_type: type[_T],
         sort_options: dict
 ):
     result = ProcessedSortingOptions()
@@ -121,7 +122,7 @@ def process_sort_options(
         return result
 
     for field, direction in sort_options.items():
-        field = get_model_field_options(cls, field)
+        field = get_model_field(dataclass_type, field)
 
         if not field:
             continue
@@ -160,5 +161,27 @@ def process_pagination_options(
     if 'skip' in pagination_options:
         result.skip = pagination_options['skip']
         vars_.append(result.skip)
+
+    return result
+
+
+def process_group_by_options(
+        dataclass_type: type[_T],
+        group_by_options: list
+):
+    result = []
+
+    model_fields = registry.get(dataclass_type).model_fields
+
+    for column in group_by_options:
+        if column not in model_fields:
+            continue
+
+        model_field = model_fields[column]
+
+        if not model_field.can_group:
+            continue
+
+        result.append(model_field.name)
 
     return result

@@ -4,7 +4,7 @@ from unittest import TestCase
 from model_connect.connect import connect
 from model_connect.options import ConnectOptions, ModelField, ModelFields, Model
 from model_connect.integrations.psycopg2 import Psycopg2Model
-from model_connect.registry import get_model_options
+from model_connect.registry import get_model
 
 
 class Tests(TestCase):
@@ -16,7 +16,7 @@ class Tests(TestCase):
 
         connect(Person)
 
-        tablename = get_model_options(Person).integrations.get(Psycopg2Model).tablename
+        tablename = get_model(Person).integrations.get(Psycopg2Model).tablename
 
         self.assertEqual(tablename, 'person')
 
@@ -35,6 +35,6 @@ class Tests(TestCase):
             )
         )
 
-        tablename = get_model_options(Person).integrations.get(Psycopg2Model).tablename
+        tablename = get_model(Person).integrations.get(Psycopg2Model).tablename
 
         self.assertEqual(tablename, 'people')

@@ -8,7 +8,7 @@ from psycopg2.extras import DictCursor
 from model_connect import registry
 from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
 from model_connect.integrations.psycopg2.common.streaming import stream_from_cursor, stream_results_to_dataclass
-from model_connect.registry import get_model_options
+from model_connect.registry import get_model
 
 _T = TypeVar('_T')
 
@@ -28,7 +28,7 @@ def generate_insert_columns(model_class: type[_T]) -> list[str]:
     model_fields = registry.get(model_class).model_fields.values()
 
     for model_field in model_fields:
-        model_field = model_field.integrations.get(Psycopg2ModelField)
+        model_field = model_field.integrations.get('psycopg2')
 
         if not model_field.include_in_insert:
             continue
@@ -47,8 +47,10 @@ def create_insert_query(
 ) -> InsertSQL:
     vars_ = []
 
-    model = get_model_options(model_class)
-    model = model.integrations.get(Psycopg2Model)
+    model = get_model(
+        model_class,
+        'psycopg2'
+    )
 
     if isinstance(data, model_class):
         data = [data]
@@ -77,8 +79,8 @@ def create_insert_query(
         INSERT INTO
             {{ tablename }}
             (
-                {%- for column_name in column_names %}
-                    {{ column_name }}
+                {%- for column in columns %}
+                    {{ column }}
                     {%- if not loop.last %}
                         ,
                     {%- endif %}
@@ -92,7 +94,7 @@ def create_insert_query(
 
     sql = template.render(
         tablename=model.tablename,
-        column_names=columns
+        columns=columns
     )
 
     sql = ' '.join(sql.split())

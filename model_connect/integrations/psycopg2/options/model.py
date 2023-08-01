@@ -18,6 +18,11 @@ class Psycopg2Model(BaseIntegrationModel):
         init=False
     )
 
+    @classmethod
+    @property
+    def integration_name(cls) -> str:
+        return 'psycopg2'
+
     def resolve(self, connect_options: 'ConnectOptions'):
         self._connect_options = connect_options
 

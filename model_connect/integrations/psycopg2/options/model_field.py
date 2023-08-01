@@ -9,9 +9,15 @@ from model_connect.options import ConnectOptions, ModelField
 class Psycopg2ModelField(BaseIntegrationModelField):
     can_filter: bool = UNDEFINED
     can_sort: bool = UNDEFINED
+    can_group: bool = UNDEFINED
     column_name: str = UNDEFINED
     include_in_insert: bool = UNDEFINED
     include_in_select: bool = UNDEFINED
+
+    @classmethod
+    @property
+    def integration_name(cls):
+        return 'psycopg2'
 
     def resolve(self, options: 'ConnectOptions', model_field: 'ModelField'):
         self.can_filter = coalesce(

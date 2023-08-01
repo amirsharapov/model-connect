@@ -10,6 +10,12 @@ _T = TypeVar('_T')
 
 @dataclass
 class BaseIntegrationModel(ABC):
+    @classmethod
+    @property
+    @abstractmethod
+    def integration_name(cls) -> str:
+        ...
+
     @abstractmethod
     def resolve(self, options: 'ConnectOptions'):
         ...
@@ -17,14 +23,20 @@ class BaseIntegrationModel(ABC):
 
 @dataclass
 class BaseIntegrationModelField(ABC):
+    @classmethod
+    @property
+    @abstractmethod
+    def integration_name(self) -> str:
+        ...
+
     @abstractmethod
     def resolve(self, options: 'ConnectOptions', model_field: 'ModelField'):
         ...
 
 
-class ModelIntegrations(dict[type[_T], _T]):
+class ModelIntegrations(dict[str, _T]):
     pass
 
 
-class ModelFieldIntegrations(dict[type[_T], _T]):
+class ModelFieldIntegrations(dict[str, _T]):
     pass

@@ -55,10 +55,15 @@ class Model:
         self.query_params.resolve(connect_options)
 
         for integration in self.override_integrations:
-            self._integrations[integration.__class__] = integration
+            name = integration.integration_name
 
-        for name, (model_class, model_field_class) in integrations_registry.iterate():
-            if model_class not in self._integrations:
-                self._integrations[model_class] = model_class()
+            self._integrations[name] = integration
 
-            self._integrations[model_class].resolve(connect_options)
+        for name, model_class, _ in integrations_registry.iterate():
+            if name in self._integrations:
+                continue
+
+            model = model_class()
+            model.resolve(connect_options)
+
+            self._integrations[name] = model
