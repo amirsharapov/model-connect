@@ -54,8 +54,7 @@ def create_select_query(
 ) -> SelectSQL:
     vars_ = []
 
-    model = get_model(model_class)
-    model = model.integrations.get(Psycopg2Model)
+    model = get_model(model_class, 'psycopg2')
 
     if columns is None:
         columns = generate_select_columns(

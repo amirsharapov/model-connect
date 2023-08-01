@@ -16,7 +16,7 @@ class Tests(TestCase):
 
         connect(Person)
 
-        tablename = get_model(Person).integrations.get(Psycopg2Model).tablename
+        tablename = get_model(Person, 'psycopg2').tablename
 
         self.assertEqual(tablename, 'person')
 
@@ -35,6 +35,6 @@ class Tests(TestCase):
             )
         )
 
-        tablename = get_model(Person).integrations.get(Psycopg2Model).tablename
+        tablename = get_model(Person, 'psycopg2').tablename
 
         self.assertEqual(tablename, 'people')
