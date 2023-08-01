@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field, asdict
 from functools import cache
-from typing import Iterable, TypeVar
+from typing import Iterable, TypeVar, overload, Generator
 
 from jinja2 import Template
 from psycopg2.extras import DictCursor
@@ -140,6 +140,28 @@ def create_insert_query(
         sql,
         vars_
     )
+
+
+@overload
+def stream_insert(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        data: _T,
+        columns: list[str] = None,
+        on_conflict_options: dict = None
+) -> _T:
+    ...
+
+
+@overload
+def stream_insert(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        data: Iterable[_T],
+        columns: list[str] = None,
+        on_conflict_options: dict = None
+) -> Generator[_T, None, None]:
+    ...
 
 
 def stream_insert(
