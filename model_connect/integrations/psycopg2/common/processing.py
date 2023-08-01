@@ -171,6 +171,9 @@ def process_group_by_options(
 ):
     result = []
 
+    if not group_by_options:
+        return result
+
     model_fields = registry.get(dataclass_type).model_fields
 
     for column in group_by_options:
