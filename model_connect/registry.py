@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar, overload
-
+from typing import TYPE_CHECKING, TypeVar, overload, Generator
 
 if TYPE_CHECKING:
     from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
@@ -116,3 +115,47 @@ def get_model_field(
         return model_field
 
     return model_field.integrations[integration]
+
+
+@overload
+def get_model_fields(
+        dataclass_type: type,
+        integration: str = 'psycopg2'
+) -> Generator['Psycopg2ModelField', None, None]:
+    ...
+
+
+@overload
+def get_model_fields(
+        dataclass_type: type,
+        integration: str = 'fastapi'
+) -> Generator['FastAPIModelField', None, None]:
+    ...
+
+
+@overload
+def get_model_fields(
+        dataclass_type: type,
+        integration: str
+) -> Generator['_IntegrationModelFieldT', None, None]:
+    ...
+
+
+@overload
+def get_model_fields(
+        dataclass_type: type,
+        integration: None = None
+) -> Generator['ModelField', None, None]:
+    ...
+
+
+def get_model_fields(
+        dataclass_type: type,
+        integration: str = None
+):
+    model_fields = get(dataclass_type).model_fields.values()
+
+    for model_field in model_fields:
+        if integration is not None:
+            model_field = model_field.integrations[integration]
+        yield model_field

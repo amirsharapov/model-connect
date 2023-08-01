@@ -7,6 +7,7 @@ from psycopg2.extras import DictCursor
 
 from model_connect import registry
 from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
+from model_connect.integrations.psycopg2.common.processing import process_on_conflict_options
 from model_connect.integrations.psycopg2.common.streaming import stream_from_cursor, stream_results_to_dataclass
 from model_connect.registry import get_model
 
@@ -41,22 +42,31 @@ def generate_insert_columns(model_class: type[_T]) -> list[str]:
 
 
 def create_insert_query(
-        model_class: type[_T],
+        dataclass_type: type[_T],
         data: _T | Iterable[_T],
-        columns: list[str] = None
+        columns: list[str] = None,
+        on_conflict_options: dict = None
 ) -> InsertSQL:
     vars_ = []
 
     model = get_model(
-        model_class,
+        dataclass_type,
         'psycopg2'
     )
 
-    if isinstance(data, model_class):
+    if isinstance(data, dataclass_type):
         data = [data]
 
     if not columns:
-        columns = generate_insert_columns(model_class)
+        columns = generate_insert_columns(
+            dataclass_type
+        )
+
+    if on_conflict_options is not None:
+        on_conflict_options = process_on_conflict_options(
+            dataclass_type,
+            on_conflict_options
+        )
 
     values = []
 
@@ -80,21 +90,47 @@ def create_insert_query(
             {{ tablename }}
             (
                 {%- for column in columns %}
-                    {{ column }}
-                    {%- if not loop.last %}
-                        ,
-                    {%- endif %}
+                {{ column }}
+                {%- if not loop.last %}
+                    ,
+                {%- endif %}
                 {%- endfor %}
             )
         VALUES
             %s
+        
+        {%- if on_conflict_options %}
+            ON CONFLICT (
+                {%- for column in on_conflict_options.conflict_targets %}
+                {{ column }}
+                {%- if not loop.last %}
+                ,
+                {%- endif %}
+                {%- endfor %}
+            )
+            
+            {%- if on_conflict_options.do_nothing %}
+            DO NOTHING
+            
+            {%- elif on_conflict_options.do_update %}
+            DO UPDATE SET
+                {%- for column in on_conflict_options.update_columns %}
+                {{ column }} = EXCLUDED.{{ column }}
+                {%- if not loop.last %}
+                ,
+                {%- endif %}
+                {%- endfor %}
+            {%- endif %}
+        {%- endif %}
+        
         RETURNING
             *
     ''')
 
     sql = template.render(
         tablename=model.tablename,
-        columns=columns
+        columns=columns,
+        on_conflict_options=on_conflict_options
     )
 
     sql = ' '.join(sql.split())

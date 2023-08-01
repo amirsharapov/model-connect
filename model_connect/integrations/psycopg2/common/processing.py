@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclass_field
 from typing import TypeVar, Optional
 
 from model_connect import registry
 from model_connect.constants import is_undefined, UNDEFINED
-from model_connect.registry import get_model_field
+from model_connect.registry import get_model_field, get_model_fields
 
 _T = TypeVar('_T')
 
@@ -17,16 +17,16 @@ class ProcessedFilters(list['ProcessedFilter']):
         self.vars = vars_
 
 
+class ProcessedSortingOptions(list['ProcessedSortingOption']):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 @dataclass
 class ProcessedFilter:
     column: str
     operator: str
     value: str
-
-
-class ProcessedSortingOptions(list['ProcessedSortingOption']):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
 
 @dataclass
@@ -39,6 +39,26 @@ class ProcessedSortingOption:
 class ProcessedPaginationOptions:
     limit: Optional[int] = None
     skip: Optional[int] = None
+
+
+@dataclass
+class ProcessedGroupByOptions(list[str]):
+    pass
+
+
+@dataclass
+class ProcessedOnConflictOptions:
+    do: str = None
+    conflict_targets: list[str] = dataclass_field(default_factory=list)
+    update_columns: list[str] = dataclass_field(default_factory=list)
+
+    @property
+    def do_nothing(self) -> bool:
+        return self.do == 'NOTHING'
+
+    @property
+    def do_update(self) -> bool:
+        return self.do == 'UPDATE'
 
 
 def process_filter_options(
@@ -169,7 +189,7 @@ def process_group_by_options(
         dataclass_type: type[_T],
         group_by_options: list
 ):
-    result = []
+    result = ProcessedGroupByOptions()
 
     if not group_by_options:
         return result
@@ -186,5 +206,63 @@ def process_group_by_options(
             continue
 
         result.append(model_field.name)
+
+    return result
+
+
+def process_on_conflict_options(
+        dataclass_type: type[_T],
+        on_conflict_options: dict
+):
+    result = ProcessedOnConflictOptions()
+
+    if not on_conflict_options:
+        return result
+
+    assert 'do' in on_conflict_options
+    assert isinstance(on_conflict_options['do'], str)
+
+    do: str
+    do = on_conflict_options['do']
+    do = do.upper()
+
+    conflict_targets = on_conflict_options.get(
+        'conflict_targets',
+        None
+    )
+    update_columns = on_conflict_options.get(
+        'update_columns',
+        None
+    )
+
+    assert do in ('UPDATE', 'NOTHING')
+
+    model_fields = get_model_fields(dataclass_type, 'psycopg2')
+    model_fields = list(model_fields)
+
+    for field in model_fields:
+        if not field.can_be_conflict_target:
+            continue
+
+        if 'conflict_targets' in on_conflict_options and field.column_name not in conflict_targets:
+            continue
+
+        result.conflict_targets.append(field.column_name)
+
+    for field in model_fields:
+        if do == 'NOTHING':
+            continue
+
+        if not field.include_in_on_conflict_update:
+            continue
+
+        if 'update_columns' in on_conflict_options and field.column_name not in update_columns:
+            continue
+
+        result.update_columns.append(field.column_name)
+
+    result.do = do.upper()
+    result.conflict_targets = tuple(result.conflict_targets)
+    result.update_columns = tuple(result.update_columns)
 
     return result

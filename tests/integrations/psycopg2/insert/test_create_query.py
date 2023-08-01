@@ -100,3 +100,47 @@ class Tests(TestCase):
             )],
             sql.vars
         )
+
+    def test_on_conflict_do_nothing(self):
+        data = Person(None, 'bob', 12)
+
+        sql = create_insert_query(
+            Person,
+            data,
+            on_conflict_options={'do': 'nothing'}
+        )
+
+        self.assertEqual(
+            'INSERT INTO person ( name , age ) VALUES %s ON CONFLICT ( id ) DO NOTHING RETURNING *',
+            sql.sql
+        )
+
+        self.assertEqual(
+            [(
+                'bob',
+                12,
+            )],
+            sql.vars
+        )
+
+    def test_on_conflict_do_update(self):
+        data = Person(None, 'bob', 12)
+
+        sql = create_insert_query(
+            Person,
+            data,
+            on_conflict_options={'do': 'update'}
+        )
+
+        self.assertEqual(
+            'INSERT INTO person ( name , age ) VALUES %s ON CONFLICT ( id ) DO UPDATE SET name = EXCLUDED.name , age = EXCLUDED.age RETURNING *',
+            sql.sql
+        )
+
+        self.assertEqual(
+            [(
+                'bob',
+                12,
+            )],
+            sql.vars
+        )
