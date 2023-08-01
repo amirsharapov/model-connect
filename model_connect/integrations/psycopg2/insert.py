@@ -148,7 +148,7 @@ def stream_insert(
         data: _T | Iterable[_T],
         columns: list[str] = None,
         on_conflict_options: dict = None
-) -> None:
+):
     insert_query = create_insert_query(
         dataclass_type,
         data,
