@@ -144,14 +144,16 @@ def create_insert_query(
 
 def stream_insert(
         cursor: DictCursor,
-        model_class: type[_T],
+        dataclass_type: type[_T],
         data: _T | Iterable[_T],
-        columns: list[str] = None
+        columns: list[str] = None,
+        on_conflict_options: dict = None
 ) -> None:
     insert_query = create_insert_query(
-        model_class,
+        dataclass_type,
         data,
-        columns
+        columns,
+        on_conflict_options
     )
 
     cursor.executemany(
@@ -160,7 +162,7 @@ def stream_insert(
     )
 
     results = stream_from_cursor(cursor)
-    results = stream_results_to_dataclass(results, model_class)
+    results = stream_results_to_dataclass(results, dataclass_type)
 
     for result in results:
         yield result
