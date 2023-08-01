@@ -1,12 +1,10 @@
 from dataclasses import dataclass, field, asdict
 from functools import cache
-from typing import Iterable, TypeVar, overload, Generator
+from typing import Iterable, TypeVar, Generator
 
 from jinja2 import Template
 from psycopg2.extras import DictCursor, execute_values
 
-from model_connect import registry
-from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
 from model_connect.integrations.psycopg2.common.processing import process_on_conflict_options
 from model_connect.integrations.psycopg2.common.streaming import stream_from_cursor, stream_results_to_dataclass
 from model_connect.registry import get_model, get_model_fields
@@ -41,7 +39,7 @@ def generate_insert_columns(dataclass_type: type[_T]) -> list[str]:
 
 def create_insert_query(
         dataclass_type: type[_T],
-        data: _T | Iterable[_T],
+        data: Iterable[_T],
         columns: list[str] = None,
         on_conflict_options: dict = None
 ) -> InsertSQL:
@@ -51,9 +49,6 @@ def create_insert_query(
         dataclass_type,
         'psycopg2'
     )
-
-    if isinstance(data, dataclass_type):
-        data = [data]
 
     if not columns:
         columns = generate_insert_columns(
@@ -140,32 +135,10 @@ def create_insert_query(
     )
 
 
-@overload
-def stream_insert(
-        cursor: DictCursor,
-        dataclass_type: type[_T],
-        data: _T,
-        columns: list[str] = None,
-        on_conflict_options: dict = None
-) -> Generator[_T, None, None]:
-    ...
-
-
-@overload
 def stream_insert(
         cursor: DictCursor,
         dataclass_type: type[_T],
         data: Iterable[_T],
-        columns: list[str] = None,
-        on_conflict_options: dict = None
-) -> Generator[_T, None, None]:
-    ...
-
-
-def stream_insert(
-        cursor: DictCursor,
-        dataclass_type: type[_T],
-        data: _T | Iterable[_T],
         columns: list[str] = None,
         on_conflict_options: dict = None
 ) -> Generator[_T, None, None]:
