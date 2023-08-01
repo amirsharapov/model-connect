@@ -140,13 +140,35 @@ def create_insert_query(
     )
 
 
+@overload
+def stream_insert(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        data: _T,
+        columns: list[str] = None,
+        on_conflict_options: dict = None
+) -> Generator[_T, None, None]:
+    ...
+
+
+@overload
+def stream_insert(
+        cursor: DictCursor,
+        dataclass_type: type[_T],
+        data: Iterable[_T],
+        columns: list[str] = None,
+        on_conflict_options: dict = None
+) -> Generator[_T, None, None]:
+    ...
+
+
 def stream_insert(
         cursor: DictCursor,
         dataclass_type: type[_T],
         data: _T | Iterable[_T],
         columns: list[str] = None,
         on_conflict_options: dict = None
-) ->Generator[_T, None, None]:
+) -> Generator[_T, None, None]:
     insert_query = create_insert_query(
         dataclass_type,
         data,
