@@ -3,13 +3,13 @@ from functools import cache
 from typing import Iterable, TypeVar, overload, Generator
 
 from jinja2 import Template
-from psycopg2.extras import DictCursor
+from psycopg2.extras import DictCursor, execute_values
 
 from model_connect import registry
 from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
 from model_connect.integrations.psycopg2.common.processing import process_on_conflict_options
 from model_connect.integrations.psycopg2.common.streaming import stream_from_cursor, stream_results_to_dataclass
-from model_connect.registry import get_model
+from model_connect.registry import get_model, get_model_fields
 
 _T = TypeVar('_T')
 
@@ -23,20 +23,18 @@ class InsertSQL:
 
 
 @cache
-def generate_insert_columns(model_class: type[_T]) -> list[str]:
+def generate_insert_columns(dataclass_type: type[_T]) -> list[str]:
     columns = []
 
-    model_fields = registry.get(model_class).model_fields.values()
+    model_fields = get_model_fields(
+        dataclass_type,
+        'psycopg2'
+    )
 
     for model_field in model_fields:
-        model_field = model_field.integrations.get('psycopg2')
-
         if not model_field.include_in_insert:
             continue
-
-        columns.append(
-            model_field.column_name
-        )
+        columns.append(model_field.column_name)
 
     return columns
 
@@ -156,7 +154,8 @@ def stream_insert(
         on_conflict_options
     )
 
-    cursor.executemany(
+    execute_values(
+        cursor,
         insert_query.sql,
         insert_query.vars
     )
