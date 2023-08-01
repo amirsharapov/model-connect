@@ -9,9 +9,12 @@ from model_connect import registry
 from model_connect.integrations.psycopg2.common.processing import (
     process_filter_options,
     process_sort_options,
-    process_pagination_options, process_group_options
+    process_pagination_options, process_group_by_options
 )
-from model_connect.integrations.psycopg2.common.streaming import stream_results_to_dataclass, stream_from_cursor
+from model_connect.integrations.psycopg2.common.streaming import (
+    stream_results_to_dataclass,
+    stream_from_cursor
+)
 from model_connect.registry import get_model
 
 _T = TypeVar('_T')
@@ -77,7 +80,7 @@ def create_select_query(
         vars_
     )
 
-    group_by_options = process_group_options(
+    group_by_options = process_group_by_options(
         model_class,
         group_by_options
     )
@@ -104,9 +107,9 @@ def create_select_query(
             {%- endfor %}
         {%- endif %}
         
-        {%- if group_options %}
+        {%- if group_by_options %}
             GROUP BY
-            {%- for option in group_options %}
+            {%- for option in group_by_options %}
             {{ option }}
             {%- if not loop.last %}
             ,
@@ -139,7 +142,7 @@ def create_select_query(
         filter_options=filter_options,
         sort_options=sort_options,
         pagination_options=pagination_options,
-        group_options=group_by_options
+        group_by_options=group_by_options
     )
 
     sql = ' '.join(sql.split())
@@ -158,14 +161,16 @@ def stream_select(
         chunk_size: int = 1000,
         filter_options: dict = None,
         sort_options: dict = None,
-        pagination_options: dict = None
+        pagination_options: dict = None,
+        group_by_options: list[str] = None
 ):
     query = create_select_query(
         dataclass_type,
         columns,
         filter_options,
         sort_options,
-        pagination_options
+        pagination_options,
+        group_by_options
     )
 
     cursor.execute(query.sql, query.vars)

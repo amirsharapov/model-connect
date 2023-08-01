@@ -3,6 +3,7 @@ from model_connect.integrations.psycopg2.options.model_field import Psycopg2Mode
 from model_connect.integrations.psycopg2.select import (
     create_select_query,
     stream_select,
+    stream_select_distinct
 )
 from model_connect.integrations.psycopg2.insert import (
     create_insert_query,
