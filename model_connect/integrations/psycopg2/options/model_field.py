@@ -34,7 +34,7 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         if model_field.is_identifier:
             include_in_insert = False
 
-        if is_dataclass(model_field.type):
+        if is_dataclass(model_field.inferred_type):
             include_in_insert = False
 
         self.include_in_insert = coalesce(
@@ -44,7 +44,7 @@ class Psycopg2ModelField(BaseIntegrationModelField):
 
         include_in_select = True
 
-        if is_dataclass(model_field.type):
+        if is_dataclass(model_field.inferred_type):
             include_in_select = False
 
         self.include_in_select = coalesce(

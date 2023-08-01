@@ -33,6 +33,7 @@ class ModelField:
     can_sort: bool = UNDEFINED
     can_filter: bool = UNDEFINED
     is_identifier: bool = UNDEFINED
+    is_required_on_init: bool = UNDEFINED
     request_dtos: RequestDtos = UNDEFINED
     response_dtos: ResponseDtos = UNDEFINED
     query_params: tuple[str, ...] = UNDEFINED
@@ -46,7 +47,7 @@ class ModelField:
         init=False
     )
 
-    _type: str = field(
+    _inferred_type: str = field(
         init=False
     )
 
@@ -64,8 +65,8 @@ class ModelField:
         return self._dataclass_field
 
     @property
-    def type(self):
-        return self._type
+    def inferred_type(self):
+        return self._inferred_type
 
     @property
     def name(self):
@@ -80,14 +81,14 @@ class ModelField:
             options: 'ConnectOptions',
             dataclass_field: Field
     ):
-        self._type = dataclass_field.type
+        self._inferred_type = dataclass_field.type
         self._name = dataclass_field.name
 
-        if hasattr(self._type, '__args__'):
-            type_args = self._type.__args__
+        if hasattr(self._inferred_type, '__args__'):
+            type_args = self._inferred_type.__args__
 
             if len(type_args) == 2 and NoneType in type_args:
-                self._type = coalesce(*type_args)
+                self._inferred_type = coalesce(*type_args)
 
         self._connect_options = options
         self._dataclass_field = dataclass_field
@@ -105,6 +106,22 @@ class ModelField:
         self.is_identifier = coalesce(
             self.is_identifier,
             False
+        )
+
+        is_required_on_init = True
+
+        if dataclass_field.init is False:
+            is_required_on_init = False
+
+        if dataclass_field.default is not None:
+            is_required_on_init = False
+
+        if dataclass_field.default_factory is not None:
+            is_required_on_init = False
+
+        self.is_required_on_init = coalesce(
+            self.is_required_on_init,
+            is_required_on_init
         )
 
         self.request_dtos = coalesce(

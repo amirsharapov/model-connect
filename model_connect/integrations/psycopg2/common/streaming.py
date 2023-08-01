@@ -11,20 +11,11 @@ _T = TypeVar("_T")
 
 @cache
 def get_required_field_names(dataclass_type: type[_T]):
-    fields = registry.get(dataclass_type).model_fields.values()
     result = []
 
-    for field in fields:
-        if not field.dataclass_field.init:
-            continue
-
-        if field.dataclass_field.default is not None:
-            continue
-
-        if field.dataclass_field.default_factory is not None:
-            continue
-
-        result.append(field.dataclass_field.name)
+    for field in registry.get(dataclass_type).model_fields.values():
+        if field.is_required_on_init:
+            result.append(field.name)
 
     return result
 
