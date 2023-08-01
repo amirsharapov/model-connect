@@ -165,7 +165,7 @@ def process_pagination_options(
     return result
 
 
-def process_group_by_options(
+def process_group_options(
         dataclass_type: type[_T],
         group_by_options: list
 ):

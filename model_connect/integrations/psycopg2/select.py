@@ -9,10 +9,9 @@ from model_connect import registry
 from model_connect.integrations.psycopg2.common.processing import (
     process_filter_options,
     process_sort_options,
-    process_pagination_options
+    process_pagination_options, process_group_options
 )
 from model_connect.integrations.psycopg2.common.streaming import stream_results_to_dataclass, stream_from_cursor
-from model_connect.integrations.psycopg2.options.model import Psycopg2Model
 from model_connect.registry import get_model
 
 _T = TypeVar('_T')
@@ -50,7 +49,8 @@ def create_select_query(
         columns: list[str] = None,
         filter_options: dict = None,
         sort_options: dict = None,
-        pagination_options: dict = None
+        pagination_options: dict = None,
+        group_by_options: list[str] = None
 ) -> SelectSQL:
     vars_ = []
 
@@ -77,6 +77,11 @@ def create_select_query(
         vars_
     )
 
+    group_by_options = process_group_options(
+        model_class,
+        group_by_options
+    )
+
     template = Template('''
         SELECT
             {%- for column in columns %}
@@ -95,6 +100,16 @@ def create_select_query(
             {{ filter.column }} {{ filter.operator }} %s
             {%- if not loop.last %}
             AND
+            {%- endif %}
+            {%- endfor %}
+        {%- endif %}
+        
+        {%- if group_options %}
+            GROUP BY
+            {%- for option in group_options %}
+            {{ option }}
+            {%- if not loop.last %}
+            ,
             {%- endif %}
             {%- endfor %}
         {%- endif %}
@@ -123,7 +138,8 @@ def create_select_query(
         tablename=model.tablename,
         filter_options=filter_options,
         sort_options=sort_options,
-        pagination_options=pagination_options
+        pagination_options=pagination_options,
+        group_options=group_by_options
     )
 
     sql = ' '.join(sql.split())
@@ -175,7 +191,8 @@ def stream_select_distinct(
         [column],
         filter_options,
         sort_options,
-        pagination_options
+        pagination_options,
+        [column]
     )
 
     cursor.execute(query.sql, query.vars)

@@ -29,7 +29,7 @@ class Tests(TestCase):
         self.assertEqual('SELECT id , name , age FROM person WHERE id = %s', query.sql)
         self.assertEqual([1], query.vars)
 
-    def test_converting_eq_to_is(self):
+    def test_processing_converts_eq_to_is(self):
         connect(Person)
 
         query = create_select_query(
@@ -45,7 +45,7 @@ class Tests(TestCase):
         self.assertEqual('SELECT id , name , age FROM person WHERE id = %s AND name IS %s', query.sql)
         self.assertEqual([1, None], query.vars)
 
-    def test_like_operator(self):
+    def test_complex_filter(self):
         connect(Person)
 
         query = create_select_query(
@@ -66,7 +66,7 @@ class Tests(TestCase):
         self.assertEqual([1, '%o%', 'bob', 'joe'], query.vars)
 
 
-    def test_converting_eq_to_in(self):
+    def test_process_converts_eq_to_in(self):
         connect(Person)
 
         query = create_select_query(
@@ -79,7 +79,7 @@ class Tests(TestCase):
         self.assertEqual('SELECT id , name , age FROM person WHERE id IN %s', query.sql)
         self.assertEqual([(1, 2, 3)], query.vars)
 
-    def test_name_plural(self):
+    def test_override_plural_name(self):
         connect(
             Person,
             ConnectOptions(
@@ -94,7 +94,7 @@ class Tests(TestCase):
         self.assertEqual('SELECT id , name , age FROM people', query.sql)
         self.assertEqual([], query.vars)
 
-    def test_override(self):
+    def test_override_tablename(self):
         connect(
             Person,
             ConnectOptions(
@@ -115,14 +115,7 @@ class Tests(TestCase):
         self.assertEqual([], query.vars)
 
     def test_sorting(self):
-        connect(
-            Person,
-            ConnectOptions(
-                model=Model(
-                    name_plural='people'
-                )
-            )
-        )
+        connect(Person)
 
         query = create_select_query(
             Person,
@@ -132,5 +125,29 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM people ORDER BY id ASC, name DESC', query.sql)
+        self.assertEqual('SELECT id , name , age FROM person ORDER BY id ASC, name DESC', query.sql)
         self.assertEqual([], query.vars)
+
+    def test_group_by(self):
+        connect(Person)
+
+        query = create_select_query(
+            Person,
+            group_by_options=[
+                'id',
+                'name'
+            ]
+        )
+
+        self.assertEqual('SELECT id , name , age FROM person GROUP BY id , name', query.sql)
+
+    def test_select_one_group_by(self):
+        connect(Person)
+
+        query = create_select_query(
+            Person,
+            columns=['id'],
+            group_by_options=['id']
+        )
+
+        self.assertEqual('SELECT id FROM person GROUP BY id', query.sql)
