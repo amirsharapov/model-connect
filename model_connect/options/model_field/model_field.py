@@ -152,6 +152,7 @@ class ModelField:
             name = integration.integration_name
 
             self._integrations[name] = integration
+            self._integrations[name].resolve(connect_options, self)
 
         for name, _, model_field_class in integrations_registry.iterate():
             if name in self._integrations:
