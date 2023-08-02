@@ -1,4 +1,5 @@
 from dataclasses import dataclass, is_dataclass
+from typing import Callable, Any
 
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField
@@ -15,8 +16,8 @@ class Psycopg2ModelField(BaseIntegrationModelField):
     include_in_insert: bool = UNDEFINED
     include_in_select: bool = UNDEFINED
     include_in_on_conflict_update: bool = UNDEFINED
-    encoder: callable = UNDEFINED
-    decoder: callable = UNDEFINED
+    encoder: Callable[['Psycopg2ModelField', Any], Any] = UNDEFINED
+    decoder: Callable[['Psycopg2ModelField', Any], Any] = UNDEFINED
 
     _connect_options: 'ConnectOptions' = None
     _model_field: 'ModelField' = None

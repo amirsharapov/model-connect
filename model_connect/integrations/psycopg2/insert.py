@@ -119,6 +119,9 @@ def stream_insert(
         columns: list[str] = None,
         on_conflict_options: dict = None
 ) -> Generator[_T, None, None]:
+    if not data:
+        return
+
     insert_query = create_insert_query(
         dataclass_type,
         data,
