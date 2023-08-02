@@ -48,7 +48,7 @@ def generate_select_columns(model_class: type[_T]) -> list[str]:
 
 
 def create_select_query(
-        model_class: type[_T],
+        dataclass_type: type[_T],
         columns: list[str] = None,
         filter_options: dict = None,
         sort_options: dict = None,
@@ -57,21 +57,21 @@ def create_select_query(
 ) -> SelectSQL:
     vars_ = []
 
-    model = get_model(model_class, 'psycopg2')
+    model = get_model(dataclass_type, 'psycopg2')
 
     if columns is None:
         columns = generate_select_columns(
-            model_class
+            dataclass_type
         )
 
     filter_options = process_filter_options(
-        model_class,
+        dataclass_type,
         filter_options,
         vars_
     )
 
     sort_options = process_sort_options(
-        model_class,
+        dataclass_type,
         sort_options
     )
 
@@ -81,7 +81,7 @@ def create_select_query(
     )
 
     group_by_options = process_group_by_options(
-        model_class,
+        dataclass_type,
         group_by_options
     )
 
@@ -154,6 +154,51 @@ def create_select_query(
     )
 
 
+def create_select_count_query(
+        dataclass_type: type[_T],
+        filter_options: dict = None,
+):
+    vars_ = []
+
+    filter_options = process_filter_options(
+        dataclass_type,
+        filter_options,
+        vars_
+    )
+
+    model = get_model(dataclass_type, 'psycopg2')
+
+    template = Template('''
+    SELECT
+        COUNT(*)
+    FROM
+        {{ tablename }}
+        
+    {%- if filter_options %}
+        WHERE
+        {%- for filter in filter_options %}
+        {{ filter.column }} {{ filter.operator }} %s
+        {%- if not loop.last %}
+        AND
+        {%- endif %}
+        {%- endfor %}
+    {%- endif %}
+    ''')
+
+    sql = template.render(
+        tablename=model.tablename,
+        filter_options=filter_options
+    )
+
+    sql = ' '.join(sql.split())
+    sql = sql.strip()
+
+    return SelectSQL(
+        sql,
+        vars_
+    )
+
+
 def stream_select(
         cursor: DictCursor,
         dataclass_type: type[_T],
@@ -182,27 +227,19 @@ def stream_select(
         yield result
 
 
-def stream_select_distinct(
+def select_count(
         cursor: DictCursor,
         dataclass_type: type[_T],
-        column: str,
-        chunk_size: int = 1000,
         filter_options: dict = None,
-        sort_options: dict = None,
-        pagination_options: dict = None
 ):
-    query = create_select_query(
+    query = create_select_count_query(
         dataclass_type,
-        [column],
-        filter_options,
-        sort_options,
-        pagination_options,
-        [column]
+        filter_options
     )
 
-    cursor.execute(query.sql, query.vars)
+    cursor.execute(
+        query.sql,
+        query.vars
+    )
 
-    results = stream_from_cursor(cursor, chunk_size)
-
-    for result in results:
-        yield result[column]
+    return cursor.fetchone()[0]
