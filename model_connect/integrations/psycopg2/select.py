@@ -231,7 +231,7 @@ def select_count(
         cursor: DictCursor,
         dataclass_type: type[_T],
         filter_options: dict = None,
-):
+) -> int:
     query = create_select_count_query(
         dataclass_type,
         filter_options
