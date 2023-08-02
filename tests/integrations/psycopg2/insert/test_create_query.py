@@ -85,7 +85,7 @@ class Tests(TestCase):
 
         sql = create_insert_query(
             Person,
-            data
+            [data]
         )
 
         self.assertEqual(
@@ -106,7 +106,7 @@ class Tests(TestCase):
 
         sql = create_insert_query(
             Person,
-            data,
+            [data],
             on_conflict_options={'do': 'nothing'}
         )
 
@@ -128,7 +128,7 @@ class Tests(TestCase):
 
         sql = create_insert_query(
             Person,
-            data,
+            [data],
             on_conflict_options={'do': 'update'}
         )
 

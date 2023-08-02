@@ -12,7 +12,7 @@ from model_connect.integrations.psycopg2.common.processing import (
     process_pagination_options, process_group_by_options
 )
 from model_connect.integrations.psycopg2.common.streaming import (
-    stream_results_to_dataclass,
+    stream_to_dataclass_type,
     stream_from_cursor
 )
 from model_connect.registry import get_model
@@ -221,7 +221,7 @@ def stream_select(
     cursor.execute(query.sql, query.vars)
 
     results = stream_from_cursor(cursor, chunk_size)
-    results = stream_results_to_dataclass(results, dataclass_type)
+    results = stream_to_dataclass_type(results, dataclass_type)
 
     for result in results:
         yield result

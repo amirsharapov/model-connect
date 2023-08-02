@@ -15,13 +15,29 @@ class Psycopg2ModelField(BaseIntegrationModelField):
     include_in_insert: bool = UNDEFINED
     include_in_select: bool = UNDEFINED
     include_in_on_conflict_update: bool = UNDEFINED
+    encoder: callable = UNDEFINED
+    decoder: callable = UNDEFINED
+
+    _connect_options: 'ConnectOptions' = None
+    _model_field: 'ModelField' = None
 
     @classmethod
     @property
     def integration_name(cls):
         return 'psycopg2'
 
+    @property
+    def connect_options(self) -> 'ConnectOptions':
+        return self._connect_options
+
+    @property
+    def model_field(self) -> 'ModelField':
+        return self._model_field
+
     def resolve(self, options: 'ConnectOptions', model_field: 'ModelField'):
+        self._connect_options = options
+        self._model_field = model_field
+
         self.can_filter = coalesce(
             self.can_filter,
             True
@@ -35,6 +51,16 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         self.column_name = coalesce(
             self.column_name,
             model_field.name
+        )
+
+        self.decoder = coalesce(
+            self.decoder,
+            None
+        )
+
+        self.encoder = coalesce(
+            self.encoder,
+            None
         )
 
         include_in_insert = True
