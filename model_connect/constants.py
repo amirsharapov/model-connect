@@ -1,6 +1,11 @@
 from enum import Enum
 
-UNDEFINED = object()
+class Undefined:
+    def __repr__(self):
+        return 'UNDEFINED'
+
+
+UNDEFINED = Undefined()
 
 
 def is_undefined(value):
