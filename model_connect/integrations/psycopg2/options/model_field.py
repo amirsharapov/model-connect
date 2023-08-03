@@ -70,10 +70,10 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         if not model_field.is_db_column:
             include_in_insert = False
 
-        if model_field.is_identifier:
+        elif model_field.is_identifier:
             include_in_insert = False
 
-        if is_dataclass(model_field.inferred_type):
+        elif is_dataclass(model_field.inferred_type):
             include_in_insert = False
 
         self.include_in_insert = coalesce(
@@ -86,7 +86,7 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         if not model_field.is_db_column:
             include_in_select = False
 
-        if is_dataclass(model_field.inferred_type):
+        elif is_dataclass(model_field.inferred_type):
             include_in_select = False
 
         self.include_in_select = coalesce(
@@ -97,15 +97,12 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         include_in_on_conflict_targets = False
 
         if not model_field.is_db_column:
+            include_in_on_conflict_targets = False
+
+        elif model_field.is_identifier:
             include_in_on_conflict_targets = True
 
-        if model_field.is_identifier:
-            include_in_on_conflict_targets = True
-
-        if is_dataclass(model_field.inferred_type):
-            include_in_on_conflict_targets = True
-
-        if self.has_unique_constraint:
+        elif self.has_unique_constraint:
             include_in_on_conflict_targets = True
 
         self.include_in_on_conflict_targets = coalesce(
@@ -118,7 +115,7 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         if not model_field.is_db_column:
             include_in_on_conflict_update = False
 
-        if model_field.is_identifier:
+        elif model_field.is_identifier:
             include_in_on_conflict_update = False
 
         self.include_in_on_conflict_update = coalesce(
