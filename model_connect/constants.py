@@ -4,6 +4,9 @@ class Undefined:
     def __repr__(self):
         return 'UNDEFINED'
 
+    def __bool__(self):
+        return False
+
 
 UNDEFINED = Undefined()
 

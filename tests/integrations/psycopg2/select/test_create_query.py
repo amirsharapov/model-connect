@@ -26,7 +26,7 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM person WHERE id = %s', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people WHERE id = %s', query.sql)
         self.assertEqual([1], query.vars)
 
     def test_processing_converts_eq_to_is(self):
@@ -42,7 +42,7 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM person WHERE id = %s AND name IS %s', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people WHERE id = %s AND name IS %s', query.sql)
         self.assertEqual([1, None], query.vars)
 
     def test_complex_filter(self):
@@ -62,7 +62,7 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM person WHERE id = %s AND name LIKE %s AND name != %s AND name != %s', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people WHERE id = %s AND name LIKE %s AND name != %s AND name != %s', query.sql)
         self.assertEqual([1, '%o%', 'bob', 'joe'], query.vars)
 
 
@@ -76,7 +76,7 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM person WHERE id IN %s', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people WHERE id IN %s', query.sql)
         self.assertEqual([(1, 2, 3)], query.vars)
 
     def test_override_plural_name(self):
@@ -84,14 +84,14 @@ class Tests(TestCase):
             Person,
             ConnectOptions(
                 model=Model(
-                    name_plural='people'
+                    name_plural_parts=('persons',)
                 )
             )
         )
 
         query = create_select_query(Person)
 
-        self.assertEqual('SELECT id , name , age FROM people', query.sql)
+        self.assertEqual('SELECT id , name , age FROM persons', query.sql)
         self.assertEqual([], query.vars)
 
     def test_override_tablename(self):
@@ -99,7 +99,6 @@ class Tests(TestCase):
             Person,
             ConnectOptions(
                 model=Model(
-                    name_plural='people',
                     override_integrations=(
                         Psycopg2Model(
                             tablename='persons',
@@ -125,7 +124,7 @@ class Tests(TestCase):
             }
         )
 
-        self.assertEqual('SELECT id , name , age FROM person ORDER BY id ASC, name DESC', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people ORDER BY id ASC, name DESC', query.sql)
         self.assertEqual([], query.vars)
 
     def test_group_by(self):
@@ -139,7 +138,7 @@ class Tests(TestCase):
             ]
         )
 
-        self.assertEqual('SELECT id , name , age FROM person GROUP BY id , name', query.sql)
+        self.assertEqual('SELECT id , name , age FROM people GROUP BY id , name', query.sql)
 
     def test_select_one_group_by(self):
         connect(Person)
@@ -150,4 +149,4 @@ class Tests(TestCase):
             group_by_options=['id']
         )
 
-        self.assertEqual('SELECT id FROM person GROUP BY id', query.sql)
+        self.assertEqual('SELECT id FROM people GROUP BY id', query.sql)

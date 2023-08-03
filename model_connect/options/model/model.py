@@ -2,6 +2,8 @@ import re
 from dataclasses import dataclass, field
 from typing import TypeVar, TYPE_CHECKING, Iterable
 
+import inflect
+
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModel, ModelIntegrations
 from model_connect.integrations import registry as integrations_registry
@@ -12,23 +14,25 @@ if TYPE_CHECKING:
 
 _T = TypeVar('_T', bound=BaseIntegrationModel)
 
+_inflect_engine = inflect.engine()
+
 
 def split_model_name(name: str):
     return re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', name)
 
 
-def convert_name_parts_to_snake_case(name_parts: Iterable[str, ...]):
+def convert_name_parts_to_snake_case(name_parts: Iterable[str]):
     return '_'.join(name_parts).lower()
 
 
-def convert_name_parts_to_kebab_case(name_parts: Iterable[str, ...]):
+def convert_name_parts_to_kebab_case(name_parts: Iterable[str]):
     return '-'.join(name_parts).lower()
 
 
 @dataclass
 class Model:
-    name_single_parts: Iterable[str, ...] | str = UNDEFINED
-    name_plural_parts: Iterable[str, ...] | str = UNDEFINED
+    name_single_parts: Iterable[str] | str = UNDEFINED
+    name_plural_parts: Iterable[str] | str = UNDEFINED
     query_params: 'QueryParams' = UNDEFINED
     override_integrations: tuple['BaseIntegrationModel', ...] = UNDEFINED
 
@@ -68,9 +72,15 @@ class Model:
             self.name_single_parts,
             split_model_name(connect_options.dataclass_type.__name__)
         )
+
+        name_single = ''.join(self.name_single_parts)
+        name_plural = _inflect_engine.plural_noun(name_single)
+
+        name_plural_parts = split_model_name(name_plural)
+
         self.name_plural_parts = coalesce(
             self.name_plural_parts,
-            None
+            name_plural_parts
         )
 
         self.query_params = coalesce(

@@ -254,6 +254,7 @@ def process_on_conflict_options(
             ]):
                 result.update_columns.append(field.column_name)
 
+    result.do = do
     result.conflict_targets = tuple(result.conflict_targets)
     result.update_columns = tuple(result.update_columns)
 

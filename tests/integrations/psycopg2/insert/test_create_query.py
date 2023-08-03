@@ -40,7 +40,7 @@ class Tests(TestCase):
         )
 
         self.assertEqual(
-            'INSERT INTO person ( name , age ) VALUES %s RETURNING *',
+            'INSERT INTO people ( name , age ) VALUES %s RETURNING *',
             sql.sql
         )
 
@@ -67,7 +67,7 @@ class Tests(TestCase):
         )
 
         self.assertEqual(
-            'INSERT INTO person ( name ) VALUES %s RETURNING *',
+            'INSERT INTO people ( name ) VALUES %s RETURNING *',
             sql.sql
         )
 
@@ -89,7 +89,7 @@ class Tests(TestCase):
         )
 
         self.assertEqual(
-            'INSERT INTO person ( name , age ) VALUES %s RETURNING *',
+            'INSERT INTO people ( name , age ) VALUES %s RETURNING *',
             sql.sql
         )
 
@@ -111,7 +111,7 @@ class Tests(TestCase):
         )
 
         self.assertEqual(
-            'INSERT INTO person ( name , age ) VALUES %s ON CONFLICT ( id ) DO NOTHING RETURNING *',
+            'INSERT INTO people ( name , age ) VALUES %s ON CONFLICT ( id ) DO NOTHING RETURNING *',
             sql.sql
         )
 
@@ -133,7 +133,7 @@ class Tests(TestCase):
         )
 
         self.assertEqual(
-            'INSERT INTO person ( name , age ) VALUES %s ON CONFLICT ( id ) DO UPDATE SET name = EXCLUDED.name , age = EXCLUDED.age RETURNING *',
+            'INSERT INTO people ( name , age ) VALUES %s ON CONFLICT ( id ) DO UPDATE SET name = EXCLUDED.name , age = EXCLUDED.age RETURNING *',
             sql.sql
         )
 

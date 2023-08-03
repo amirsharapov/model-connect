@@ -18,7 +18,7 @@ class Tests(TestCase):
 
         tablename = get_model(Person, 'psycopg2').tablename
 
-        self.assertEqual(tablename, 'person')
+        self.assertEqual(tablename, 'people')
 
     def test_with_custom_tablename(self):
         @dataclass
@@ -30,7 +30,7 @@ class Tests(TestCase):
             Person,
             ConnectOptions(
                 model=Model(
-                    name_plural='people',
+                    name_plural_parts=('people',),
                 )
             )
         )
