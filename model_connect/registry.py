@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, TypeVar, overload, Generator
+from typing import TYPE_CHECKING, TypeVar, overload, Generator, Literal
 
 if TYPE_CHECKING:
     from model_connect.integrations.psycopg2 import Psycopg2Model, Psycopg2ModelField
@@ -26,16 +26,16 @@ def has(dataclass_type: type) -> bool:
 @overload
 def get_model(
         dataclass_type: type,
-        integration: str = 'psycopg2'
-) -> 'Psycopg2Model':
+        integration: Literal['fastapi']
+) -> 'FastAPIModel':
     ...
 
 
 @overload
 def get_model(
         dataclass_type: type,
-        integration: str = 'fastapi'
-) -> 'FastAPIModel':
+        integration: Literal['psycopg2']
+) -> 'Psycopg2Model':
     ...
 
 
@@ -71,7 +71,7 @@ def get_model(
 def get_model_field(
         dataclass_type: type,
         field_name: str,
-        integration: str = 'psycopg2'
+        integration: Literal['psycopg2']
 ) -> 'Psycopg2ModelField':
     ...
 
@@ -80,7 +80,7 @@ def get_model_field(
 def get_model_field(
         dataclass_type: type,
         field_name: str,
-        integration: str = 'fastapi'
+        integration: Literal['fastapi']
 ) -> 'FastAPIModelField':
     ...
 
@@ -120,7 +120,7 @@ def get_model_field(
 @overload
 def get_model_fields(
         dataclass_type: type,
-        integration: str = 'psycopg2'
+        integration: Literal['psycopg2']
 ) -> Generator['Psycopg2ModelField', None, None]:
     ...
 
@@ -128,7 +128,7 @@ def get_model_fields(
 @overload
 def get_model_fields(
         dataclass_type: type,
-        integration: str = 'fastapi'
+        integration: Literal['fastapi']
 ) -> Generator['FastAPIModelField', None, None]:
     ...
 

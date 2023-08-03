@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 
-from model_connect import registry
-from model_connect.integrations.fastapi import FastAPIModel
+from model_connect.registry import get_model
 
 
 def create_router(
@@ -9,8 +8,7 @@ def create_router(
         add_prefix: bool = True,
         add_tags: bool = True
 ):
-    options = registry.get(dataclass_type)
-    options = options.model.integrations.get(FastAPIModel)
+    options = get_model(dataclass_type, 'fastapi')
 
     return APIRouter(
         prefix=options.resource_path if add_prefix else '',
