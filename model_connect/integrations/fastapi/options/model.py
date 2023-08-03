@@ -32,3 +32,8 @@ class FastAPIModel(BaseIntegrationModel):
             self.resource_version,
             1
         )
+
+        self.tag_name = coalesce(
+            self.tag_name,
+            self._connect_options.model.name_plural_parts.join(' ')
+        )
