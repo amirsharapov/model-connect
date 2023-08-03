@@ -50,6 +50,7 @@ def stream_to_dataclass_type(results: Iterator[dict], dataclass_type: type[_T]) 
     fields = list(fields)
 
     for result in results:
+        result = dict(result)
         for field in fields:
             if field.column_name not in result and field.model_field.is_required_on_init:
                 result[field.column_name] = UNDEFINED
