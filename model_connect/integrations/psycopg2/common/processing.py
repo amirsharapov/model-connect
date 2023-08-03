@@ -236,23 +236,32 @@ def process_on_conflict_options(
         ()
     )
 
+    is_conflict_targets_specified = (
+        'conflict_targets' in on_conflict_options
+    )
+    is_update_columns_specified = (
+        'update_columns' in on_conflict_options
+    )
+
     model_fields = get_model_fields(dataclass_type, 'psycopg2')
     model_fields = list(model_fields)
 
     for field in model_fields:
-        if any([
-            field.column_name in conflict_targets,
-            field.include_in_on_conflict_targets
-        ]):
-            result.conflict_targets.append(field.column_name)
+        if is_conflict_targets_specified:
+            if field.column_name in conflict_targets:
+                result.conflict_targets.append(field.column_name)
+        else:
+            if field.include_in_on_conflict_targets:
+                result.conflict_targets.append(field.column_name)
 
     if do != 'NOTHING':
         for field in model_fields:
-            if any([
-                field.column_name in update_columns,
-                field.include_in_on_conflict_update
-            ]):
-                result.update_columns.append(field.column_name)
+            if is_update_columns_specified:
+                if field.column_name in update_columns:
+                    result.update_columns.append(field.column_name)
+            else:
+                if field.include_in_on_conflict_update:
+                    result.update_columns.append(field.column_name)
 
     result.do = do
     result.conflict_targets = tuple(result.conflict_targets)
