@@ -67,6 +67,9 @@ class Psycopg2ModelField(BaseIntegrationModelField):
 
         include_in_insert = True
 
+        if not model_field.is_db_column:
+            include_in_insert = False
+
         if model_field.is_identifier:
             include_in_insert = False
 
@@ -80,6 +83,9 @@ class Psycopg2ModelField(BaseIntegrationModelField):
 
         include_in_select = True
 
+        if not model_field.is_db_column:
+            include_in_select = False
+
         if is_dataclass(model_field.inferred_type):
             include_in_select = False
 
@@ -89,6 +95,9 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         )
 
         include_in_on_conflict_targets = False
+
+        if not model_field.is_db_column:
+            include_in_on_conflict_targets = True
 
         if model_field.is_identifier:
             include_in_on_conflict_targets = True
@@ -105,6 +114,9 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         )
 
         include_in_on_conflict_update = True
+
+        if not model_field.is_db_column:
+            include_in_on_conflict_update = False
 
         if model_field.is_identifier:
             include_in_on_conflict_update = False
