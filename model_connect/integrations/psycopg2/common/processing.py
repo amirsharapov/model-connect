@@ -220,48 +220,40 @@ def process_on_conflict_options(
         return result
 
     assert 'do' in on_conflict_options
-    assert isinstance(on_conflict_options['do'], str)
 
     do: str
     do = on_conflict_options['do']
     do = do.upper()
 
+    assert do in ('UPDATE', 'NOTHING')
+
     conflict_targets = on_conflict_options.get(
         'conflict_targets',
-        None
+        ()
     )
     update_columns = on_conflict_options.get(
         'update_columns',
-        None
+        ()
     )
-
-    assert do in ('UPDATE', 'NOTHING')
 
     model_fields = get_model_fields(dataclass_type, 'psycopg2')
     model_fields = list(model_fields)
 
     for field in model_fields:
-        if not field.can_be_conflict_target:
-            continue
+        if any([
+            field.column_name in conflict_targets,
+            field.include_in_on_conflict_targets
+        ]):
+            result.conflict_targets.append(field.column_name)
 
-        if 'conflict_targets' in on_conflict_options and field.column_name not in conflict_targets:
-            continue
+    if do != 'NOTHING':
+        for field in model_fields:
+            if any([
+                field.column_name in update_columns,
+                field.include_in_on_conflict_update
+            ]):
+                result.update_columns.append(field.column_name)
 
-        result.conflict_targets.append(field.column_name)
-
-    for field in model_fields:
-        if do == 'NOTHING':
-            continue
-
-        if not field.include_in_on_conflict_update:
-            continue
-
-        if 'update_columns' in on_conflict_options and field.column_name not in update_columns:
-            continue
-
-        result.update_columns.append(field.column_name)
-
-    result.do = do.upper()
     result.conflict_targets = tuple(result.conflict_targets)
     result.update_columns = tuple(result.update_columns)
 

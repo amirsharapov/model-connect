@@ -15,20 +15,20 @@ class FastAPIModel(BaseIntegrationModel):
         init=False
     )
 
+    @classmethod
+    @property
+    def integration_name(cls) -> str:
+        return 'fastapi'
+
     def resolve(self, connect_options: ConnectOptions):
         self._connect_options = connect_options
 
         self.resource_path = coalesce(
             self.resource_path,
-            self._connect_options.dataclass_type.__name__.lower()
+            self._connect_options.model.name_plural_kebab_case,
         )
 
         self.resource_version = coalesce(
             self.resource_version,
             1
-        )
-
-        self.tag_name = coalesce(
-            self.tag_name,
-            self._connect_options.dataclass_type.__name__
         )

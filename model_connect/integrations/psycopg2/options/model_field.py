@@ -11,10 +11,11 @@ class Psycopg2ModelField(BaseIntegrationModelField):
     can_filter: bool = UNDEFINED
     can_sort: bool = UNDEFINED
     can_group: bool = UNDEFINED
-    can_be_conflict_target: bool = UNDEFINED
     column_name: str = UNDEFINED
+    has_unique_constraint: bool = UNDEFINED
     include_in_insert: bool = UNDEFINED
     include_in_select: bool = UNDEFINED
+    include_in_on_conflict_targets: bool = UNDEFINED
     include_in_on_conflict_update: bool = UNDEFINED
     encoder: Callable[['Psycopg2ModelField', Any], Any] = UNDEFINED
     decoder: Callable[['Psycopg2ModelField', Any], Any] = UNDEFINED
@@ -87,6 +88,22 @@ class Psycopg2ModelField(BaseIntegrationModelField):
             include_in_select
         )
 
+        include_in_on_conflict_targets = False
+
+        if model_field.is_identifier:
+            include_in_on_conflict_targets = True
+
+        if is_dataclass(model_field.inferred_type):
+            include_in_on_conflict_targets = True
+
+        if self.has_unique_constraint:
+            include_in_on_conflict_targets = True
+
+        self.include_in_on_conflict_targets = coalesce(
+            self.include_in_on_conflict_targets,
+            include_in_on_conflict_targets
+        )
+
         include_in_on_conflict_update = True
 
         if model_field.is_identifier:
@@ -95,14 +112,4 @@ class Psycopg2ModelField(BaseIntegrationModelField):
         self.include_in_on_conflict_update = coalesce(
             self.include_in_on_conflict_update,
             include_in_on_conflict_update
-        )
-
-        is_on_conflict_target = False
-
-        if model_field.is_identifier:
-            is_on_conflict_target = True
-
-        self.can_be_conflict_target = coalesce(
-            self.can_be_conflict_target,
-            is_on_conflict_target
         )

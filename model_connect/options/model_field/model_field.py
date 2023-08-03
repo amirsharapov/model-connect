@@ -28,7 +28,10 @@ class ModelFields(dict[str, 'ModelField']):
             if name not in self:
                 self[name] = ModelField()
 
-            self[name].resolve(options, dataclass_field)
+            self[name].resolve(
+                options,
+                dataclass_field
+            )
 
 
 @dataclass
@@ -36,6 +39,7 @@ class ModelField:
     can_sort: bool = UNDEFINED
     can_filter: bool = UNDEFINED
     can_group: bool = UNDEFINED
+    is_db_column: bool = UNDEFINED
     is_identifier: bool = UNDEFINED
     is_required_on_init: bool = UNDEFINED
     request_dtos: RequestDtos = UNDEFINED
@@ -109,6 +113,11 @@ class ModelField:
 
         self.can_group = coalesce(
             self.can_group,
+            True
+        )
+
+        self.is_db_column = coalesce(
+            self.is_db_column,
             True
         )
 

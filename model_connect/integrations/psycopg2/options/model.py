@@ -28,8 +28,6 @@ class Psycopg2Model(BaseIntegrationModel):
 
         self.tablename = coalesce(
             self.tablename,
-            self._connect_options.model.name_plural,
-            self._connect_options.model.name_single
+            self._connect_options.model.name_plural_snake_case,
+            self._connect_options.model.name_single_snake_case
         )
-
-        self.tablename = self.tablename.lower()

@@ -1,5 +1,6 @@
+import re
 from dataclasses import dataclass, field
-from typing import TypeVar, TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING, Iterable
 
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModel, ModelIntegrations
@@ -12,10 +13,22 @@ if TYPE_CHECKING:
 _T = TypeVar('_T', bound=BaseIntegrationModel)
 
 
+def split_model_name(name: str):
+    return re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', name)
+
+
+def convert_name_parts_to_snake_case(name_parts: Iterable[str, ...]):
+    return '_'.join(name_parts).lower()
+
+
+def convert_name_parts_to_kebab_case(name_parts: Iterable[str, ...]):
+    return '-'.join(name_parts).lower()
+
+
 @dataclass
 class Model:
-    name_single: str = UNDEFINED
-    name_plural: str = UNDEFINED
+    name_single_parts: Iterable[str, ...] | str = UNDEFINED
+    name_plural_parts: Iterable[str, ...] | str = UNDEFINED
     query_params: 'QueryParams' = UNDEFINED
     override_integrations: tuple['BaseIntegrationModel', ...] = UNDEFINED
 
@@ -32,17 +45,34 @@ class Model:
     def integrations(self):
         return self._integrations
 
+    @property
+    def name_single_snake_case(self):
+        return convert_name_parts_to_snake_case(self.name_single_parts)
+
+    @property
+    def name_plural_snake_case(self):
+        return convert_name_parts_to_snake_case(self.name_plural_parts)
+
+    @property
+    def name_single_kebab_case(self):
+        return convert_name_parts_to_kebab_case(self.name_single_parts)
+
+    @property
+    def name_plural_kebab_case(self):
+        return convert_name_parts_to_kebab_case(self.name_plural_parts)
+
     def resolve(self, connect_options: 'ConnectOptions'):
         self._connect_options = connect_options
 
-        self.name_single = coalesce(
-            self.name_single,
-            connect_options.dataclass_type.__name__
+        self.name_single_parts = coalesce(
+            self.name_single_parts,
+            split_model_name(connect_options.dataclass_type.__name__)
         )
-        self.name_plural = coalesce(
-            self.name_plural,
+        self.name_plural_parts = coalesce(
+            self.name_plural_parts,
             None
         )
+
         self.query_params = coalesce(
             self.query_params,
             QueryParams()
