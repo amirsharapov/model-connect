@@ -17,6 +17,7 @@ class Tests(TestCase):
             GlobalConnectOptions(
                 fastapi=FastAPIGlobalOptions(
                     base_prefix='/api',
+                    default_resource_version=1
                 )
             )
         )
@@ -32,11 +33,6 @@ class Tests(TestCase):
             ConnectOptions(
                 model=Model(
                     name_plural_parts=('persons',),
-                    override_integrations=(
-                        FastAPIModel(
-                            resource_version=1
-                        ),
-                    )
                 )
             )
         )

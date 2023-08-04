@@ -13,8 +13,13 @@ def get_router_prefix(dataclass_type: type):
     resource_path = global_options.get('fastapi').base_prefix
     resource_path = resource_path.rstrip('/')
 
-    if model.resource_version is not None:
-        resource_path = f'{resource_path}/v{model.resource_version}'
+    resource_version = model.resource_version
+
+    if resource_version is None:
+        resource_version = global_options.get('fastapi').default_resource_version
+
+    if resource_version is not None:
+        resource_path = f'{resource_path}/v{resource_version}'
 
     if not model.resource_path.startswith('/'):
         resource_path += '/'
