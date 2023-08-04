@@ -25,7 +25,7 @@ class FastAPIModel(BaseIntegrationModel):
 
         self.resource_path = coalesce(
             self.resource_path,
-            self._connect_options.model.name_plural_kebab_case,
+            '/' + self._connect_options.model.name_plural_kebab_case,
         )
 
         self.resource_version = coalesce(
