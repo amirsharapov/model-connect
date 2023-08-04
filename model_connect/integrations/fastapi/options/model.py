@@ -35,5 +35,5 @@ class FastAPIModel(BaseIntegrationModel):
 
         self.tag_name = coalesce(
             self.tag_name,
-            self._connect_options.model.name_plural_parts.join(' ')
+            ' '.join(self._connect_options.model.name_plural_parts)
         )
