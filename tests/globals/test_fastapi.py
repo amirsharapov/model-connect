@@ -6,9 +6,7 @@ from model_connect.connect import connect_psycopg2_integration, connect_fastapi_
 from model_connect.globals.connect import connect_global_options
 from model_connect.globals.options.connect import GlobalConnectOptions
 from model_connect.globals.options.fastapi import FastAPIGlobalOptions
-from model_connect.integrations.fastapi import FastAPIModel
 from model_connect.integrations.fastapi.router import get_router_prefix
-from model_connect.options import ConnectOptions, Model
 
 
 class Tests(TestCase):
@@ -28,18 +26,11 @@ class Tests(TestCase):
 
         connect_psycopg2_integration()
         connect_fastapi_integration()
-        connect(
-            Person,
-            ConnectOptions(
-                model=Model(
-                    name_plural_parts=('persons',),
-                )
-            )
-        )
+        connect(Person)
 
         prefix = get_router_prefix(Person)
 
         self.assertEqual(
-            '/api/v1/persons',
+            '/api/v1/people',
             prefix
         )
