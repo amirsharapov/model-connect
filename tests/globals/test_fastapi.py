@@ -13,12 +13,13 @@ from model_connect.options import ConnectOptions, Model
 
 class Tests(TestCase):
     def test(self):
-        global_options = GlobalConnectOptions(
-            fastapi=FastAPIGlobalOptions(
-                base_prefix='/api',
+        connect_global_options(
+            GlobalConnectOptions(
+                fastapi=FastAPIGlobalOptions(
+                    base_prefix='/api',
+                )
             )
         )
-        connect_global_options(global_options)
 
         @dataclass
         class Person:
