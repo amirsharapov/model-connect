@@ -30,7 +30,7 @@ class FastAPIModel(BaseIntegrationModel):
 
         self.resource_version = coalesce(
             self.resource_version,
-            1
+            None
         )
 
         self.tag_name = coalesce(

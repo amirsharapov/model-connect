@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModelField, ModelFieldIntegrations
-from model_connect.integrations import registry as integrations_registry
+from model_connect.integrations import type_registry
 from model_connect.options.model_field.dtos.request import RequestDtos
 from model_connect.options.model_field.dtos.response import ResponseDtos
 
@@ -163,7 +163,7 @@ class ModelField:
             self._integrations[name] = integration
             self._integrations[name].resolve(connect_options, self)
 
-        for name, _, model_field_class in integrations_registry.iterate():
+        for name, _, model_field_class in type_registry.iterate():
             if name in self._integrations:
                 continue
 

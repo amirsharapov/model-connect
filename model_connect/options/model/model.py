@@ -6,7 +6,7 @@ import inflect
 
 from model_connect.constants import UNDEFINED, coalesce
 from model_connect.integrations.base import BaseIntegrationModel, ModelIntegrations
-from model_connect.integrations import registry as integrations_registry
+from model_connect.integrations import type_registry
 from model_connect.options.model.query_params import QueryParams
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class Model:
             self._integrations[name] = integration
             self._integrations[name].resolve(connect_options)
 
-        for name, model_class, _ in integrations_registry.iterate():
+        for name, model_class, _ in type_registry.iterate():
             if name in self._integrations:
                 continue
 
